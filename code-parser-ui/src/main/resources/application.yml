@@ -1,0 +1,6 @@
+server:
+  port: 8888
+  servlet:
+    contextPath: /parser-ui
+apiPrefix: /api
+parserServiceUrl: http://localhost:8080/parser/api

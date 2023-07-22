@@ -1,0 +1,19 @@
+<div style="text-align:center"class="container">
+  <h1>
+    Add File to parser !
+  </h1>
+  <div class="container">
+
+    <form (submit)="onFormSubmit()">
+
+
+    <input type="file" class="file-upload" (change)="onFileSelected($event)">
+      <br>
+      <button>Submit</button>
+    </form>
+
+    <div>
+      <p>Json file: <span>{{result}}</span></p>
+    </div>
+  </div>
+</div>
