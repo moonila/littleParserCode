@@ -1,20 +1,5 @@
-.card-title {
-  font-size: 50px;
-  text-align: right;
-}
-
-.card{
-  height: 120px;
-}
-
-.card-img {
-  opacity: 0.75;                /* Opacity (Transparency) */
-  font-size: 70px;
-  padding-left: 20px;
-}
-
-.btn .bnt-primary{
-
+.file-input {
+  display: none;
 }
 
 

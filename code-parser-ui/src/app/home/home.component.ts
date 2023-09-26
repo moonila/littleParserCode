@@ -42,7 +42,7 @@ export class HomeComponent implements OnInit{
      .subscribe(
           res => {
             console.log("the response ");
-            this.result = JSON.stringify(res.response);
+            this.result = res.response;
           },
           error => console.log("fails")
     )
