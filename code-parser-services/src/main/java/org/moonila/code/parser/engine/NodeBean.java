@@ -6,7 +6,6 @@ public class NodeBean {
 
     String name;
     String description;
-
     List<NodeBean> child;
 
 

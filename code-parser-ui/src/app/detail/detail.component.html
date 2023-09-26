@@ -1,9 +1,12 @@
 <div>
     <div>
-        <p>
-            <label class="file-label">Name file: </label>
-            <span>{{fileName}}</span>
-        </p>
+        <div>
+            <input type="button" (click)="goHome($event)" value="Import new file" />
+        </div>
+
+        <label class="file-label">Name file: &nbsp;</label>
+        <span>{{fileName}}</span>
+        <br/>
         <label class="file-label">Json: </label>
         <div class="result">
             {{result}}

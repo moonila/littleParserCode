@@ -24,4 +24,8 @@ export class DetailComponent implements OnInit{
     this.fileName = state.fileName
     this.result = state.result
    }
+
+   goHome(event) {
+      this.router.navigate(['home'])
+   }
 }
