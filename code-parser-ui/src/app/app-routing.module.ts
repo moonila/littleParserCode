@@ -20,10 +20,10 @@ export const appRouteList: Routes = [
 
 @NgModule({
    exports: [
-          RouterModule
+        RouterModule
       ],
       imports: [
-          RouterModule.forRoot(appRouteList)
+        RouterModule.forRoot(appRouteList)
       ]
 
 })
