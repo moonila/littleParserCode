@@ -16,10 +16,23 @@ public class ParserServicesTest {
 
     @Test
     void treeSitterParserJava() {
+        String currentDirectory = new File("").getAbsolutePath();
         try {
-           String fileName = "/home/sandra/Projets/parser-code/code-parser-services/src/main/java/org/moonila/code/parser/controller/ParserController.java";
-           String result = parserServices.parseFile(new File(fileName));
+           String fileName = "src/main/java/org/moonila/code/parser/controller/ParserController.java";
+           String result = parserServices.parseFile(new File(currentDirectory, fileName));
            System.out.println(result);
+        } catch (ParserException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    void treeSitterParserC() {
+        String currentDirectory = new File("").getAbsolutePath();
+        try {
+            String fileName = "src/test/resources/code/ItineraireMetro.c";
+            String result = parserServices.parseFile(new File(currentDirectory, fileName));
+            System.out.println(result);
         } catch (ParserException e) {
             throw new RuntimeException(e);
         }

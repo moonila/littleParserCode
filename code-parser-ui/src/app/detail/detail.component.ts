@@ -12,6 +12,7 @@ import { Observable } from 'rxjs';
 export class DetailComponent implements OnInit{
    result: string;
    fileName: string;
+   stats: string;
 
 
    constructor(private activatedRoute: ActivatedRoute,
@@ -22,7 +23,9 @@ export class DetailComponent implements OnInit{
    ngOnInit() {
     const state = history.state
     this.fileName = state.fileName
-    this.result = state.result
+    var jsonObject : any = JSON.parse(state.result)
+    this.result = JSON.stringify(jsonObject.nodeBean, null, 2)
+    this.stats = JSON.stringify(jsonObject.kindList)
    }
 
    goHome(event) {
