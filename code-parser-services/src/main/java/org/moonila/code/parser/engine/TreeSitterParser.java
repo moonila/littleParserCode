@@ -125,15 +125,16 @@ public class TreeSitterParser {
                 fctKind = new Kind();
                 fctKind.setKindType(KindType.FUNCTION);
                 fctKind.setName(source.substring(currNode.getStartByte(), currNode.getEndByte()));
-                fctKind.setNbLines(currNode.getRange().startRow - currNode.getRange().endRow);
+                fctKind.setNbLines(currNode.getRange().endRow - currNode.getRange().startRow);
                 kindList.add(fctKind);
-                updateMeasure(kind.getMeasureList(), "NB_FCT");
+                updateMeasure(kind.getMeasureList(), "NB_FCT", "Number of functions");
             } else {
                 switch (value) {
-                    case "if_statement" -> updateMeasure(kind.getMeasureList(), "NB_IF");
-                    case "for_statement" -> updateMeasure(kind.getMeasureList(), "NB_FOR");
-                    case "do_statement" -> updateMeasure(kind.getMeasureList(), "NB_DO");
-                    case "while_statement" -> updateMeasure(kind.getMeasureList(), "NB_WHILE");
+                    case "if_statement" -> updateMeasure(kind.getMeasureList(), "NB_IF", "Number of if and else if");
+                    case "for_statement" -> updateMeasure(kind.getMeasureList(), "NB_FOR", "Number of for");
+                    case "do_statement" -> updateMeasure(kind.getMeasureList(), "NB_DO", "Number of do/while");
+                    case "while_statement" -> updateMeasure(kind.getMeasureList(), "NB_WHILE", "Number of while");
+                    case "switch_expression" -> updateMeasure(kind.getMeasureList(), "NB_SWITCH", "Number of switch");
                 }
             }
             if (!isFirst) {
@@ -161,7 +162,7 @@ public class TreeSitterParser {
         return nodeBean;
     }
 
-    private void updateMeasure(List<Measure> measures, String name) {
+    private void updateMeasure(List<Measure> measures, String name, String description) {
         Measure measureTmp = measures.stream()
                 .filter(measure -> name.equals(measure.getName()))
                 .findAny()
@@ -169,6 +170,7 @@ public class TreeSitterParser {
         if (measureTmp == null) {
             measureTmp = new Measure();
             measureTmp.setName(name);
+            measureTmp.setDescription(description);
             measures.add(measureTmp);
         }
         measureTmp.setValue(measureTmp.getValue() + 1);
@@ -178,8 +180,7 @@ public class TreeSitterParser {
         return type.equals("method_declaration")
                 || type.equals("function_definition")
                 || type.equals("function")
-                || type.equals("method_definition")
-                || type.equals("function_declarator");
+                || type.equals("method_definition");
     }
 
     private long getLanguage(LanguageEnum language) {
