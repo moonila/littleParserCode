@@ -23,9 +23,11 @@ public class TreeSitterParserTest {
             assertEquals(1, kindFile.getMeasureList().size());
             assertEquals("NB_FCT", kindFile.getMeasureList().get(0).getName());
             assertEquals(2, kindFile.getMeasureList().get(0).getValue());
+
             Kind kindFct1 = resultBean.getKindList().get(1);
+            assertEquals("public void mainFct(String val1)", kindFct1.getName());
             assertEquals("FUNCTION", kindFct1.getKindType().name());
-            assertEquals(22, kindFct1.getNbLines());
+            assertEquals(21, kindFct1.getNbLines());
             assertEquals(3, kindFct1.getMeasureList().size());
             Measure ifMeasure = kindFct1.getMeasureList().stream()
                     .filter(measure -> "NB_IF".equals(measure.getName()))
@@ -52,8 +54,9 @@ public class TreeSitterParserTest {
             assertEquals("Number of while", whileMeasure.getDescription());
 
             Kind kindFct2 = resultBean.getKindList().get(2);
+            assertEquals("public void mainFct2(String val1)", kindFct2.getName());
             assertEquals("FUNCTION", kindFct2.getKindType().name());
-            assertEquals(8, kindFct2.getNbLines());
+            assertEquals(7, kindFct2.getNbLines());
             assertEquals(1, kindFct2.getMeasureList().size());
             Measure switchMeasure = kindFct2.getMeasureList().stream()
                     .filter(measure -> "NB_SWITCH".equals(measure.getName()))
@@ -80,11 +83,13 @@ public class TreeSitterParserTest {
             assertEquals(2,resultBean.getKindList().size());
             Kind kindFile = resultBean.getKindList().get(0);
             assertEquals("FILE", kindFile.getKindType().name());
-            assertEquals(81, kindFile.getNbLines());
+            assertEquals(80, kindFile.getNbLines());
             assertEquals(1, kindFile.getMeasureList().size());
             assertEquals("NB_FCT", kindFile.getMeasureList().get(0).getName());
             assertEquals(1, kindFile.getMeasureList().get(0).getValue());
+
             Kind kindFct1 = resultBean.getKindList().get(1);
+            assertEquals("int main(int argc, char *argv[])", kindFct1.getName());
             assertEquals("FUNCTION", kindFct1.getKindType().name());
             assertEquals(63, kindFct1.getNbLines());
             assertEquals(4, kindFct1.getMeasureList().size());

@@ -4,6 +4,11 @@ import java.util.List;
 
 public class ResultBean {
 
+    public ResultBean(List<Kind> kindList, NodeBean nodeBean) {
+        this.nodeBean = nodeBean;
+        this.kindList = kindList;
+    }
+
     private NodeBean nodeBean;
 
     private List<Kind> kindList;

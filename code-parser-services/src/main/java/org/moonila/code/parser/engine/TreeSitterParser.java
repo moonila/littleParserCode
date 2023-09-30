@@ -17,12 +17,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TreeSitterParser {
-
-    private List<Kind> kindList;
 
     static {
         initNativeLib();
@@ -64,8 +62,7 @@ public class TreeSitterParser {
     }
 
     public String parseFile(File srcFilePath, LanguageEnum language) throws ParserException {
-        kindList = new ArrayList<>();
-        String result = null;
+        String result;
         try {
             result = new ObjectMapper().writeValueAsString(generateResultBean(srcFilePath, language));
         } catch (JsonProcessingException e) {
@@ -77,13 +74,10 @@ public class TreeSitterParser {
     }
 
     public ResultBean generateResultBean(File srcFilePath, LanguageEnum language) throws ParserException {
-        kindList = new ArrayList<>();
-        String result;
-        System.out.println("File to be parsed " + srcFilePath.getAbsolutePath());
+        List<Kind> kindList = new ArrayList<>();
         Kind kind = new Kind();
         kind.setName(srcFilePath.getName());
         kind.setKindType(KindType.FILE);
-        kind.setNbLines(getLineCount(srcFilePath));
         kindList.add(kind);
 
         try (Parser parser = new Parser()) {
@@ -94,11 +88,30 @@ public class TreeSitterParser {
                 try (TreeCursor cursor = tree.getRootNode().walk()) {
                     currNode = cursor.getCurrentNode();
                 }
-                NodeBean nodeBean = processChild(currNode, source, true, kind);
-                ResultBean resultBean = new ResultBean();
-                resultBean.setKindList(kindList);
-                resultBean.setNodeBean(nodeBean);
-                return resultBean;
+                NodeBean parent = new NodeBean();
+                NodeBean nodeBean = processChild(currNode, parent, source, true);
+                kind.setStartLine(nodeBean.getStartLine());
+                kind.setEndLine(nodeBean.getEndLine());
+
+                List<NodeBean> functions = getChild(nodeBean);
+                Measure measureTmp = new Measure();
+                measureTmp.setName("NB_FCT");
+                measureTmp.setDescription("Number of functions");
+                measureTmp.setValue((long) functions.size());
+                kind.addMeasure(measureTmp);
+
+                for (NodeBean fct : functions) {
+                    Kind kindFct = new Kind();
+                    kindFct.setKindType(fct.getType());
+                    kindFct.setStartLine(fct.getStartLine());
+                    kindFct.setEndLine(fct.getEndLine());
+                    kindFct.getMeasureList().addAll(fct.getMeasureList());
+                    String fctName = getNodeBeanName(fct.getDescription());
+                    kindFct.setName(fctName);
+                    kindList.add(kindFct);
+                }
+
+                return new ResultBean(kindList, nodeBean);
             }
         } catch (IOException | UnsatisfiedLinkError e) {
             e.printStackTrace();
@@ -106,36 +119,50 @@ public class TreeSitterParser {
         }
     }
 
-    private static long getLineCount(File file) {
-        try (Stream<String> lines = Files.lines(file.toPath())) {
-            return lines.count();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    private List<NodeBean> getChild(NodeBean nodeBean) {
+        List<NodeBean> functions = new ArrayList<>();
+        if (nodeBean.getChild() != null && !nodeBean.getChild().isEmpty()) {
+            functions = new ArrayList<>(nodeBean.getChild()
+                    .stream()
+                    .filter(nodeTmp -> KindType.FUNCTION.equals(nodeTmp.getType())).toList());
+            for (NodeBean nodeTmp : nodeBean.getChild()) {
+                functions.addAll(getChild(nodeTmp));
+            }
         }
+        return functions;
     }
 
-    private NodeBean processChild(Node currNode, String source, boolean isFirst, Kind kind) {
+    private String getNodeBeanName(String description) {
+        String name = null;
+        Pattern pattern = Pattern.compile("^(.*?)\\{");
+        String tmpSrt = description.replace("\n", "");
+        Matcher matcher = pattern.matcher(tmpSrt);
+        if (matcher.find()) {
+            name = matcher.group(0).replace("{", "").trim();
+        }
+        if (name == null) {
+            name = description;
+        }
+        return name;
+    }
+
+    private NodeBean processChild(Node currNode, NodeBean parent, String source, boolean isFirst) {
         NodeBean nodeBean = new NodeBean();
         String value = currNode.getType();
         boolean isFct = isFunction(value);
-        Kind fctKind = null;
         if (currNode.isNamed()) {
             nodeBean.setName(value);
             if (isFct) {
-                fctKind = new Kind();
-                fctKind.setKindType(KindType.FUNCTION);
-                fctKind.setName(source.substring(currNode.getStartByte(), currNode.getEndByte()));
-                fctKind.setNbLines(currNode.getRange().endRow - currNode.getRange().startRow);
-                kindList.add(fctKind);
-                updateMeasure(kind.getMeasureList(), "NB_FCT", "Number of functions");
+                nodeBean.setType(KindType.FUNCTION);
             } else {
                 switch (value) {
-                    case "if_statement" -> updateMeasure(kind.getMeasureList(), "NB_IF", "Number of if and else if");
-                    case "for_statement" -> updateMeasure(kind.getMeasureList(), "NB_FOR", "Number of for");
-                    case "do_statement" -> updateMeasure(kind.getMeasureList(), "NB_DO", "Number of do/while");
-                    case "while_statement" -> updateMeasure(kind.getMeasureList(), "NB_WHILE", "Number of while");
-                    case "switch_expression" -> updateMeasure(kind.getMeasureList(), "NB_SWITCH", "Number of switch");
+                    case "if_statement" -> updateMeasure(parent.getMeasureList(), "NB_IF", "Number of if and else if");
+                    case "for_statement" -> updateMeasure(parent.getMeasureList(), "NB_FOR", "Number of for");
+                    case "do_statement" -> updateMeasure(parent.getMeasureList(), "NB_DO", "Number of do/while");
+                    case "while_statement" -> updateMeasure(parent.getMeasureList(), "NB_WHILE", "Number of while");
+                    case "switch_expression" -> updateMeasure(parent.getMeasureList(), "NB_SWITCH", "Number of switch");
                 }
+                nodeBean.setType(KindType.STATEMENT);
             }
             if (!isFirst) {
                 String text = source.substring(currNode.getStartByte(), currNode.getEndByte());
@@ -146,16 +173,18 @@ public class TreeSitterParser {
         } else {
             nodeBean.setName("token");
             nodeBean.setDescription(value);
+            nodeBean.setType(KindType.TOKEN);
         }
-
+        nodeBean.setStartLine(currNode.getRange().startRow);
+        nodeBean.setEndLine(currNode.getRange().endRow);
         if (currNode.getChildCount() > 0) {
             List<NodeBean> child = new ArrayList<>();
             nodeBean.setChild(child);
             for (int i = 0; i < currNode.getChildCount(); i++) {
                 if (isFct) {
-                    child.add(processChild(currNode.getChild(i), source, false, fctKind));
+                    child.add(processChild(currNode.getChild(i), nodeBean, source, false));
                 } else {
-                    child.add(processChild(currNode.getChild(i), source, false, kind));
+                    child.add(processChild(currNode.getChild(i), parent, source, false));
                 }
             }
         }

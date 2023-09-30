@@ -12,7 +12,9 @@ public class Kind {
 
     private List<Measure> measureList;
 
-    private long nbLines;
+    private int startLine;
+
+    private int endLine;
 
 
     public String getName() {
@@ -45,11 +47,23 @@ public class Kind {
         measureList.add(measure);
     }
 
-    public long getNbLines() {
-        return nbLines;
+    public int getNbLines() {
+        return endLine - startLine;
     }
 
-    public void setNbLines(long nbLines) {
-        this.nbLines = nbLines;
+    public int getStartLine() {
+        return startLine;
+    }
+
+    public void setStartLine(int startLine) {
+        this.startLine = startLine;
+    }
+
+    public int getEndLine() {
+        return endLine;
+    }
+
+    public void setEndLine(int endLine) {
+        this.endLine = endLine;
     }
 }
