@@ -175,8 +175,8 @@ public class TreeSitterParser {
             nodeBean.setDescription(value);
             nodeBean.setType(KindType.TOKEN);
         }
-        nodeBean.setStartLine(currNode.getRange().startRow);
-        nodeBean.setEndLine(currNode.getRange().endRow);
+        nodeBean.setStartLine(currNode.getRange().startRow +1);
+        nodeBean.setEndLine(currNode.getRange().endRow +1);
         if (currNode.getChildCount() > 0) {
             List<NodeBean> child = new ArrayList<>();
             nodeBean.setChild(child);

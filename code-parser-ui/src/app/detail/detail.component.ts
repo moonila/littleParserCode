@@ -24,7 +24,6 @@ export class DetailComponent implements OnInit{
     var jsonObject : any = JSON.parse(state.result);
     this.result = JSON.stringify(jsonObject.nodeBean, null, 2);
     this.statistics = jsonObject.kindList;
-    console.log(this.statistics)
    }
 
    goHome(event) {

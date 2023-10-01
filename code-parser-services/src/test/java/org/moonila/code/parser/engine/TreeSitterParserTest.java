@@ -27,6 +27,8 @@ public class TreeSitterParserTest {
             Kind kindFct1 = resultBean.getKindList().get(1);
             assertEquals("public void mainFct(String val1)", kindFct1.getName());
             assertEquals("FUNCTION", kindFct1.getKindType().name());
+            assertEquals(5, kindFct1.getStartLine());
+            assertEquals(26, kindFct1.getEndLine());
             assertEquals(21, kindFct1.getNbLines());
             assertEquals(3, kindFct1.getMeasureList().size());
             Measure ifMeasure = kindFct1.getMeasureList().stream()
@@ -56,6 +58,8 @@ public class TreeSitterParserTest {
             Kind kindFct2 = resultBean.getKindList().get(2);
             assertEquals("public void mainFct2(String val1)", kindFct2.getName());
             assertEquals("FUNCTION", kindFct2.getKindType().name());
+            assertEquals(28, kindFct2.getStartLine());
+            assertEquals(35,kindFct2.getEndLine());
             assertEquals(7, kindFct2.getNbLines());
             assertEquals(1, kindFct2.getMeasureList().size());
             Measure switchMeasure = kindFct2.getMeasureList().stream()
@@ -91,6 +95,8 @@ public class TreeSitterParserTest {
             Kind kindFct1 = resultBean.getKindList().get(1);
             assertEquals("int main(int argc, char *argv[])", kindFct1.getName());
             assertEquals("FUNCTION", kindFct1.getKindType().name());
+            assertEquals(18, kindFct1.getStartLine());
+            assertEquals(81, kindFct1.getEndLine());
             assertEquals(63, kindFct1.getNbLines());
             assertEquals(4, kindFct1.getMeasureList().size());
             Measure ifMeasure = kindFct1.getMeasureList().stream()
