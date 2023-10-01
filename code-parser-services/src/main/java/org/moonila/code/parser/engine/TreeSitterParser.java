@@ -87,6 +87,7 @@ public class TreeSitterParser {
                 Node currNode;
                 try (TreeCursor cursor = tree.getRootNode().walk()) {
                     currNode = cursor.getCurrentNode();
+                    //System.out.println(currNode.getNodeString());
                 }
                 NodeBean parent = new NodeBean();
                 NodeBean nodeBean = processChild(currNode, parent, source, true);
@@ -109,6 +110,8 @@ public class TreeSitterParser {
                     String fctName = getNodeBeanName(fct.getDescription());
                     kindFct.setName(fctName);
                     kindList.add(kindFct);
+
+                    kindFct.addMeasure(countComplexitCyclomatic(fct.getMeasureList()));
                 }
 
                 return new ResultBean(kindList, nodeBean);
@@ -117,6 +120,35 @@ public class TreeSitterParser {
             e.printStackTrace();
             throw new ParserException(e.getMessage());
         }
+    }
+
+    private Measure countComplexitCyclomatic(List<Measure> measures) {
+        long ifValue = measures.stream()
+                .filter(measure -> measure.getName().equals("NB_IF"))
+                .mapToLong(o -> o.getValue()).sum();
+
+        long forValue = measures.stream()
+                .filter(measure -> measure.getName().equals("NB_FOR"))
+                .mapToLong(o -> o.getValue()).sum();
+        long doValue = measures.stream()
+                .filter(measure -> measure.getName().equals("NB_DO"))
+                .mapToLong(o -> o.getValue()).sum();
+        long whileValue = measures.stream()
+                .filter(measure -> measure.getName().equals("NB_WHILE"))
+                .mapToLong(o -> o.getValue()).sum();
+        long switchValue = measures.stream()
+                .filter(measure -> measure.getName().equals("NB_SWITCH"))
+                .mapToLong(o -> o.getValue()).sum();
+        long catchValue = measures.stream()
+                .filter(measure -> measure.getName().equals("NB_CATCH"))
+                .mapToLong(o -> o.getValue()).sum();
+
+        Measure measureCC = new Measure();
+        measureCC.setName("COUNT_CC");
+        measureCC.setDescription("Cyclomatic Complexity");
+        measureCC.setValue(ifValue + forValue + doValue + whileValue + switchValue + catchValue + 1);
+
+        return measureCC;
     }
 
     private List<NodeBean> getChild(NodeBean nodeBean) {
@@ -161,6 +193,7 @@ public class TreeSitterParser {
                     case "do_statement" -> updateMeasure(parent.getMeasureList(), "NB_DO", "Number of do/while");
                     case "while_statement" -> updateMeasure(parent.getMeasureList(), "NB_WHILE", "Number of while");
                     case "switch_expression" -> updateMeasure(parent.getMeasureList(), "NB_SWITCH", "Number of switch");
+                    case "catch_type" -> updateMeasure(parent.getMeasureList(), "NB_CATCH", "Number of catch");
                 }
                 nodeBean.setType(KindType.STATEMENT);
             }
@@ -175,8 +208,8 @@ public class TreeSitterParser {
             nodeBean.setDescription(value);
             nodeBean.setType(KindType.TOKEN);
         }
-        nodeBean.setStartLine(currNode.getRange().startRow +1);
-        nodeBean.setEndLine(currNode.getRange().endRow +1);
+        nodeBean.setStartLine(currNode.getRange().startRow + 1);
+        nodeBean.setEndLine(currNode.getRange().endRow + 1);
         if (currNode.getChildCount() > 0) {
             List<NodeBean> child = new ArrayList<>();
             nodeBean.setChild(child);
