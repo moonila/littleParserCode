@@ -1,15 +1,25 @@
 <div>
     <div>
         <div>
-            <input type="button" (click)="goHome($event)" value="Import new file" />
+            <input type="button" (click)="goHome($event)" value="Import new file"/>
         </div>
-
-        <label class="file-label">Name file: &nbsp;</label>
-        <span>{{fileName}}</span>
         <br/>
-        <label class="file-label">Statistiques</label>
-        <div class="result">
-            {{stats}}
+        <div>
+            <label class="file-label">Statistics</label>
+            <div>
+                <ul>
+                  <li *ngFor="let statistic of statistics">
+                    <div>
+                      <span><b>{{statistic.name}}</b><i *ngIf="statistic.kindType == 'FUNCTION'"> (lines {{statistic.startLine}}:{{statistic.endLine}}) </i> </span>
+                    </div> 
+                      <ul>
+                        <li *ngFor="let measure of statistic.measureList">
+                          {{measure.description}}: {{measure.value}}
+                        </li>
+                      </ul>
+                  </li>
+                </ul>
+              </div>
         </div>
         <br/>
         <label class="file-label">Json: </label>

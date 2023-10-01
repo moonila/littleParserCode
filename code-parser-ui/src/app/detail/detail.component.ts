@@ -1,8 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-
 
 @Component({
   selector: 'app-detail',
@@ -12,7 +10,7 @@ import { Observable } from 'rxjs';
 export class DetailComponent implements OnInit{
    result: string;
    fileName: string;
-   stats: string;
+   statistics: any;
 
 
    constructor(private activatedRoute: ActivatedRoute,
@@ -21,11 +19,12 @@ export class DetailComponent implements OnInit{
    ) { }
 
    ngOnInit() {
-    const state = history.state
-    this.fileName = state.fileName
-    var jsonObject : any = JSON.parse(state.result)
-    this.result = JSON.stringify(jsonObject.nodeBean, null, 2)
-    this.stats = JSON.stringify(jsonObject.kindList)
+    const state = history.state;
+    this.fileName = state.fileName;
+    var jsonObject : any = JSON.parse(state.result);
+    this.result = JSON.stringify(jsonObject.nodeBean, null, 2);
+    this.statistics = jsonObject.kindList;
+    console.log(this.statistics)
    }
 
    goHome(event) {
