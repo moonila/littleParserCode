@@ -13,6 +13,7 @@ public class NodeBean {
     private String description;
     private List<NodeBean> child;
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)	
     private List<Measure> measureList;
 
     private KindType type;
