@@ -1,31 +1,35 @@
 <div>
+  <div>
     <div>
-        <div>
-            <input type="button" (click)="goHome($event)" value="Import new file"/>
-        </div>
-        <br/>
-        <div>
-            <label class="file-label">Statistics </label>
-            <i>(This information is only tested with Java files)</i>
-            <div>
-                <ul>
-                  <li *ngFor="let statistic of statistics">
-                    <div>
-                      <span><b>{{statistic.name}}</b><i *ngIf="statistic.kindType == 'FUNCTION'"> (lines {{statistic.startLine}}:{{statistic.endLine}}) </i> </span>
-                    </div> 
-                      <ul>
-                        <li *ngFor="let measure of statistic.measureList">
-                          {{measure.description}}: {{measure.value}}
-                        </li>
-                      </ul>
-                  </li>
-                </ul>
-              </div>
-        </div>
-        <br/>
-        <label class="file-label">Json: </label>
-        <div class="result">
-            {{result}}
-        </div>
+      <input type="button" (click)="goHome($event)" value="Import new file" />
+      <button (click)="toggle()" id="bt">
+        {{showJsonButton}}
+      </button>
     </div>
+    <div>
+      <label class="file-label">Statistics </label>
+      <i>(This information is only tested with Java files)</i>
+      <div>
+        <ul>
+          <li *ngFor="let statistic of statistics">
+            <div>
+              <span><b>{{statistic.name}}</b><i *ngIf="statistic.kindType == 'FUNCTION'"> (lines
+                  {{statistic.startLine}}:{{statistic.endLine}}) </i> </span>
+            </div>
+            <ul>
+              <li *ngFor="let measure of statistic.measureList">
+                {{measure.description}}: {{measure.value}}
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <ng-container *ngIf="show">
+      <div class="result">
+        {{result}}
+      </div>
+    </ng-container>
+
+  </div>
 </div>

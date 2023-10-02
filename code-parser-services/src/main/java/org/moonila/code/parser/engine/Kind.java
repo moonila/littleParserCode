@@ -1,10 +1,11 @@
 package org.moonila.code.parser.engine;
 
 import org.moonila.code.parser.engine.measure.Measure;
-
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.ArrayList;
 import java.util.List;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Kind {
 
     private String name;
@@ -15,7 +16,6 @@ public class Kind {
     private int startLine;
 
     private int endLine;
-
 
     public String getName() {
         return name;
