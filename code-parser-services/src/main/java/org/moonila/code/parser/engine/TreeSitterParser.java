@@ -111,7 +111,15 @@ public class TreeSitterParser {
                     kindFct.setName(fctName);
                     kindList.add(kindFct);
 
-                    kindFct.addMeasure(countComplexitCyclomatic(fct.getMeasureList()));
+                    Measure measureCC = countComplexitCyclomatic(fct.getMeasureList());
+                    kindFct.addMeasure(measureCC);
+
+                    double npatValue = Math.pow(2, (measureCC.getValue()-1));
+                    Measure measureNpath = new Measure();
+                    measureNpath.setName("COUNT_NPATH");
+                    measureNpath.setDescription("The number of acyclic execution paths");
+                    measureNpath.setValue((long) npatValue);
+                    kindFct.addMeasure(measureNpath);
                 }
 
                 return new ResultBean(kindList, nodeBean);
@@ -136,8 +144,8 @@ public class TreeSitterParser {
         long whileValue = measures.stream()
                 .filter(measure -> measure.getName().equals("NB_WHILE"))
                 .mapToLong(o -> o.getValue()).sum();
-        long switchValue = measures.stream()
-                .filter(measure -> measure.getName().equals("NB_SWITCH"))
+        long caseValue = measures.stream()
+                .filter(measure -> measure.getName().equals("NB_SWITCH_CASE"))
                 .mapToLong(o -> o.getValue()).sum();
         long catchValue = measures.stream()
                 .filter(measure -> measure.getName().equals("NB_CATCH"))
@@ -146,7 +154,8 @@ public class TreeSitterParser {
         Measure measureCC = new Measure();
         measureCC.setName("COUNT_CC");
         measureCC.setDescription("Cyclomatic Complexity");
-        measureCC.setValue(ifValue + forValue + doValue + whileValue + switchValue + catchValue + 1);
+        long ccValue = ifValue + forValue + doValue + whileValue + caseValue + catchValue;
+        measureCC.setValue(ccValue + 1);
 
         return measureCC;
     }
@@ -193,6 +202,8 @@ public class TreeSitterParser {
                     case "do_statement" -> updateMeasure(parent.getMeasureList(), "NB_DO", "Number of do/while");
                     case "while_statement" -> updateMeasure(parent.getMeasureList(), "NB_WHILE", "Number of while");
                     case "switch_expression" -> updateMeasure(parent.getMeasureList(), "NB_SWITCH", "Number of switch");
+                    case "switch_rule" ->
+                        updateMeasure(parent.getMeasureList(), "NB_SWITCH_CASE", "Number of switch cases");
                     case "catch_type" -> updateMeasure(parent.getMeasureList(), "NB_CATCH", "Number of catch");
                 }
                 nodeBean.setType(KindType.STATEMENT);
