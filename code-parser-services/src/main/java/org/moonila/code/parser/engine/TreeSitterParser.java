@@ -114,8 +114,6 @@ public class TreeSitterParser {
                     Measure measureCC = countComplexitCyclomatic(fct.getMeasureList());
                     kindFct.addMeasure(measureCC);
 
-                    
-                   // double npatValue = Math.pow(2, (measureCC.getValue() - 1));
                     Measure measureNpath = countNpath(fct.getMeasureList(), (measureCC.getValue() - 1));
                     kindFct.addMeasure(measureNpath);
                 }
@@ -136,11 +134,11 @@ public class TreeSitterParser {
                 .filter(measure -> measure.getName().equals("NB_SWITCH_CASE"))
                 .mapToLong(o -> o.getValue()).sum();
 
-        long npatValue = measureCC * (2 * (elseValue + caseValue));
+        double npatValue = Math.pow(2, (measureCC));
         Measure measureNpath = new Measure();
         measureNpath.setName("COUNT_NPATH");
         measureNpath.setDescription("The number of acyclic execution paths");
-        measureNpath.setValue(npatValue);
+        measureNpath.setValue((long) npatValue);
 
         return measureNpath;
     }
@@ -212,33 +210,14 @@ public class TreeSitterParser {
                 nodeBean.setType(KindType.FUNCTION);
             } else {
                 switch (value) {
-                    case "if_statement":
-                        if (currNode.getParent().getType().equals("if_statement")) {
-                            updateMeasure(parent.getMeasureList(), "NB_ELSE_IF", "Number of else if");
-                        } else {
-                            updateMeasure(parent.getMeasureList(), "NB_IF", "Number of if");
-                        }
-                        break;
-                    case "for_statement":
-                        updateMeasure(parent.getMeasureList(), "NB_FOR", "Number of for");
-                        break;
-                    case "do_statement":
-                        updateMeasure(parent.getMeasureList(), "NB_DO", "Number of do/while");
-                        break;
-                    case "while_statement":
-                        updateMeasure(parent.getMeasureList(), "NB_WHILE", "Number of while");
-                        break;
-                    case "switch_expression":
-                        updateMeasure(parent.getMeasureList(), "NB_SWITCH", "Number of switch");
-                        break;
-                    case "switch_rule":
+                    case "if_statement" -> updateMeasure(parent.getMeasureList(), "NB_IF", "Number of if and else if");
+                    case "for_statement" -> updateMeasure(parent.getMeasureList(), "NB_FOR", "Number of for");
+                    case "do_statement" -> updateMeasure(parent.getMeasureList(), "NB_DO", "Number of do/while");
+                    case "while_statement" -> updateMeasure(parent.getMeasureList(), "NB_WHILE", "Number of while");
+                    case "switch_expression" -> updateMeasure(parent.getMeasureList(), "NB_SWITCH", "Number of switch");
+                    case "switch_rule" ->
                         updateMeasure(parent.getMeasureList(), "NB_SWITCH_CASE", "Number of switch cases");
-                        break;
-                    case "catch_type":
-                        updateMeasure(parent.getMeasureList(), "NB_CATCH", "Number of catch");
-                        break;
-                    default:
-                        break;
+                    case "catch_type" -> updateMeasure(parent.getMeasureList(), "NB_CATCH", "Number of catch");
                 }
                 nodeBean.setType(KindType.STATEMENT);
             }
@@ -252,9 +231,6 @@ public class TreeSitterParser {
             nodeBean.setName("token");
             nodeBean.setDescription(value);
             nodeBean.setType(KindType.TOKEN);
-            if (value.equals("else")) {
-                updateMeasure(parent.getMeasureList(), "NB_ELSE", "Number of else");
-            }
         }
         nodeBean.setStartLine(currNode.getRange().startRow + 1);
         nodeBean.setEndLine(currNode.getRange().endRow + 1);
