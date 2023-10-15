@@ -1,4 +1,4 @@
-package org.moonila.code.parser.engine;
+package org.moonila.code.parser.engine.beans;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.moonila.code.parser.engine.measure.Measure;

@@ -1,4 +1,4 @@
-package org.moonila.code.parser.engine;
+package org.moonila.code.parser.engine.lng;
 
 import java.util.Arrays;
 

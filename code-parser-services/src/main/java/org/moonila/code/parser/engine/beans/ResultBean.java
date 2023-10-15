@@ -1,4 +1,4 @@
-package org.moonila.code.parser.engine;
+package org.moonila.code.parser.engine.beans;
 
 import java.util.List;
 

@@ -1,6 +1,5 @@
 package org.moonila.code.parser.engine;
 
-import ai.serenade.treesitter.Languages;
 import ai.serenade.treesitter.Node;
 import ai.serenade.treesitter.Parser;
 import ai.serenade.treesitter.Tree;
@@ -8,6 +7,12 @@ import ai.serenade.treesitter.TreeCursor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
+import org.moonila.code.parser.engine.beans.Kind;
+import org.moonila.code.parser.engine.beans.KindType;
+import org.moonila.code.parser.engine.beans.NodeBean;
+import org.moonila.code.parser.engine.beans.ResultBean;
+import org.moonila.code.parser.engine.lng.LngParser;
+import org.moonila.code.parser.engine.lng.LngStmtEnum;
 import org.moonila.code.parser.engine.measure.Measure;
 
 import java.io.File;
@@ -21,6 +26,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class TreeSitterParser {
+
+    private static final String NB_IF_MSR = "NB_IF";
+    private static final String NB_FOR_MSR = "NB_FOR";
+    private static final String NB_DO_MSR = "NB_DO";
+
+    private static final String NB_TRY_MSR = "NB_TRY";
+    private static final String NB_CATCH_MSR = "NB_CATCH";
+    private static final String NB_SWITCH_CASE_MSR = "NB_SWITCH_CASE";
+
+    private static final String NB_SWITCH_MSR = "NB_SWITCH";
+    private static final String NB_WHILE_MSR = "NB_WHILE";
 
     static {
         initNativeLib();
@@ -61,10 +77,10 @@ public class TreeSitterParser {
         }
     }
 
-    public String parseFile(File srcFilePath, LanguageEnum language) throws ParserException {
+    public String parseFile(File srcFilePath, LngParser lngParser) throws ParserException {
         String result;
         try {
-            result = new ObjectMapper().writeValueAsString(generateResultBean(srcFilePath, language));
+            result = new ObjectMapper().writeValueAsString(generateResultBean(srcFilePath, lngParser));
         } catch (JsonProcessingException e) {
             e.printStackTrace();
             throw new ParserException(e.getMessage());
@@ -73,7 +89,7 @@ public class TreeSitterParser {
         return result;
     }
 
-    public ResultBean generateResultBean(File srcFilePath, LanguageEnum language) throws ParserException {
+    public ResultBean generateResultBean(File srcFilePath, LngParser lngParser) throws ParserException {
         List<Kind> kindList = new ArrayList<>();
         Kind kind = new Kind();
         kind.setName(srcFilePath.getName());
@@ -81,16 +97,16 @@ public class TreeSitterParser {
         kindList.add(kind);
 
         try (Parser parser = new Parser()) {
-            parser.setLanguage(getLanguage(language));
+            parser.setLanguage(lngParser.getLngTreeSitter());
             String source = Files.readString(srcFilePath.toPath(), StandardCharsets.UTF_8);
             try (Tree tree = parser.parseString(source)) {
                 Node currNode;
                 try (TreeCursor cursor = tree.getRootNode().walk()) {
                     currNode = cursor.getCurrentNode();
-                    //System.out.println(currNode.getNodeString());
+                    // System.out.println(currNode.getNodeString());
                 }
                 NodeBean parent = new NodeBean();
-                NodeBean nodeBean = processChild(currNode, parent, source, true);
+                NodeBean nodeBean = processChild(currNode, parent, source, true, lngParser, false);
                 kind.setStartLine(nodeBean.getStartLine());
                 kind.setEndLine(nodeBean.getEndLine());
 
@@ -114,8 +130,7 @@ public class TreeSitterParser {
                     Measure measureCC = countComplexitCyclomatic(fct.getMeasureList());
                     kindFct.addMeasure(measureCC);
 
-                    
-                   // double npatValue = Math.pow(2, (measureCC.getValue() - 1));
+                    // double npatValue = Math.pow(2, (measureCC.getValue() - 1));
                     Measure measureNpath = countNpath(fct.getMeasureList(), (measureCC.getValue() - 1));
                     kindFct.addMeasure(measureNpath);
                 }
@@ -133,7 +148,7 @@ public class TreeSitterParser {
                 .filter(measure -> measure.getName().equals("NB_ELSE"))
                 .mapToLong(o -> o.getValue()).sum();
         long caseValue = measures.stream()
-                .filter(measure -> measure.getName().equals("NB_SWITCH_CASE"))
+                .filter(measure -> measure.getName().equals(NB_SWITCH_CASE_MSR))
                 .mapToLong(o -> o.getValue()).sum();
 
         long npatValue = measureCC * (2 * (elseValue + caseValue));
@@ -147,23 +162,23 @@ public class TreeSitterParser {
 
     private Measure countComplexitCyclomatic(List<Measure> measures) {
         long ifValue = measures.stream()
-                .filter(measure -> measure.getName().equals("NB_IF"))
+                .filter(measure -> measure.getName().equals(NB_IF_MSR))
                 .mapToLong(o -> o.getValue()).sum();
 
         long forValue = measures.stream()
-                .filter(measure -> measure.getName().equals("NB_FOR"))
+                .filter(measure -> measure.getName().equals(NB_FOR_MSR))
                 .mapToLong(o -> o.getValue()).sum();
         long doValue = measures.stream()
-                .filter(measure -> measure.getName().equals("NB_DO"))
+                .filter(measure -> measure.getName().equals(NB_DO_MSR))
                 .mapToLong(o -> o.getValue()).sum();
         long whileValue = measures.stream()
-                .filter(measure -> measure.getName().equals("NB_WHILE"))
+                .filter(measure -> measure.getName().equals(NB_WHILE_MSR))
                 .mapToLong(o -> o.getValue()).sum();
         long caseValue = measures.stream()
-                .filter(measure -> measure.getName().equals("NB_SWITCH"))
+                .filter(measure -> measure.getName().equals(NB_SWITCH_MSR))
                 .mapToLong(o -> o.getValue()).sum();
         long catchValue = measures.stream()
-                .filter(measure -> measure.getName().equals("NB_CATCH"))
+                .filter(measure -> measure.getName().equals(NB_CATCH_MSR))
                 .mapToLong(o -> o.getValue()).sum();
 
         Measure measureCC = new Measure();
@@ -202,40 +217,59 @@ public class TreeSitterParser {
         return name;
     }
 
-    private NodeBean processChild(Node currNode, NodeBean parent, String source, boolean isFirst) {
+    private NodeBean processChild(Node currNode, NodeBean parent, String source, boolean isFirst,
+            LngParser lngParser, boolean searchSubElmt) {
         NodeBean nodeBean = new NodeBean();
-        String value = currNode.getType();
-        boolean isFct = isFunction(value);
-        if (currNode.isNamed()) {
-            nodeBean.setName(value);
+        String type = currNode.getType();
+        LngStmtEnum value = lngParser.getLngStmtEnum(currNode, searchSubElmt);
+
+        boolean isFct = false;
+        if (value != null) {
+            isFct = LngStmtEnum.FCT_STMT == value;
+            nodeBean.setName(type);
             if (isFct) {
                 nodeBean.setType(KindType.FUNCTION);
             } else {
+                searchSubElmt = false;
                 switch (value) {
-                    case "if_statement":
-                        if (currNode.getParent().getType().equals("if_statement")) {
-                            updateMeasure(parent.getMeasureList(), "NB_ELSE_IF", "Number of else if");
-                        } else {
-                            updateMeasure(parent.getMeasureList(), "NB_IF", "Number of if");
-                        }
+                    case IF_STMT:
+                        updateMeasure(parent.getMeasureList(), NB_IF_MSR, "Number of if");
+                        searchSubElmt = true;
                         break;
-                    case "for_statement":
-                        updateMeasure(parent.getMeasureList(), "NB_FOR", "Number of for");
+                    case FOR_STMT:
+                        updateMeasure(parent.getMeasureList(), NB_FOR_MSR, "Number of for");
                         break;
-                    case "do_statement":
-                        updateMeasure(parent.getMeasureList(), "NB_DO", "Number of do/while");
+                    case DO_STMT:
+                        updateMeasure(parent.getMeasureList(), NB_DO_MSR, "Number of do/while");
                         break;
-                    case "while_statement":
-                        updateMeasure(parent.getMeasureList(), "NB_WHILE", "Number of while");
+                    case WHILE_STMT:
+                        updateMeasure(parent.getMeasureList(), NB_WHILE_MSR, "Number of while");
                         break;
-                    case "switch_expression":
-                        updateMeasure(parent.getMeasureList(), "NB_SWITCH", "Number of switch");
+                    case SWITCH_STMT:
+                        updateMeasure(parent.getMeasureList(), NB_SWITCH_MSR, "Number of switch");
                         break;
-                    case "switch_rule":
-                        updateMeasure(parent.getMeasureList(), "NB_SWITCH_CASE", "Number of switch cases");
+                    case SWITCH_CASE_STMT:
+                        updateMeasure(parent.getMeasureList(), NB_SWITCH_CASE_MSR, "Number of switch cases");
+                        searchSubElmt = true;
                         break;
-                    case "catch_type":
-                        updateMeasure(parent.getMeasureList(), "NB_CATCH", "Number of catch");
+                    case TRY_STMT:
+                        updateMeasure(parent.getMeasureList(), NB_TRY_MSR, "Number of try");
+                        searchSubElmt = true;
+                        break;
+                    case CATCH_STMT:
+                        updateMeasure(parent.getMeasureList(), NB_CATCH_MSR, "Number of catch");
+                        break;
+                    case ELSE_STMT:
+                        updateMeasure(parent.getMeasureList(), "NB_ELSE", "Number of else");
+                        break;
+                    case THEN_STMT:
+                        updateMeasure(parent.getMeasureList(), "NB_THEN", "Number of then");
+                        break;
+                    case CASE_BODY_STMT:
+                        updateMeasure(parent.getMeasureList(), "NB_CASE_BODY", "Number of case body");
+                        break;
+                    case TRY_BODY_STMT:
+                        updateMeasure(parent.getMeasureList(), "NB_TRY_BODY", "Number of try body");
                         break;
                     default:
                         break;
@@ -250,12 +284,10 @@ public class TreeSitterParser {
             }
         } else {
             nodeBean.setName("token");
-            nodeBean.setDescription(value);
+            nodeBean.setDescription(type);
             nodeBean.setType(KindType.TOKEN);
-            if (value.equals("else")) {
-                updateMeasure(parent.getMeasureList(), "NB_ELSE", "Number of else");
-            }
         }
+
         nodeBean.setStartLine(currNode.getRange().startRow + 1);
         nodeBean.setEndLine(currNode.getRange().endRow + 1);
         if (currNode.getChildCount() > 0) {
@@ -263,9 +295,9 @@ public class TreeSitterParser {
             nodeBean.setChild(child);
             for (int i = 0; i < currNode.getChildCount(); i++) {
                 if (isFct) {
-                    child.add(processChild(currNode.getChild(i), nodeBean, source, false));
+                    child.add(processChild(currNode.getChild(i), nodeBean, source, false, lngParser, searchSubElmt));
                 } else {
-                    child.add(processChild(currNode.getChild(i), parent, source, false));
+                    child.add(processChild(currNode.getChild(i), parent, source, false, lngParser, searchSubElmt));
                 }
             }
         }
@@ -284,28 +316,6 @@ public class TreeSitterParser {
             measures.add(measureTmp);
         }
         measureTmp.setValue(measureTmp.getValue() + 1);
-    }
-
-    private boolean isFunction(String type) {
-        return type.equals("method_declaration")
-                || type.equals("function_definition")
-                || type.equals("function")
-                || type.equals("method_definition");
-    }
-
-    private long getLanguage(LanguageEnum language) {
-        long lngVal = 0;
-        switch (language) {
-            case JAVA -> lngVal = Languages.java();
-            case TS -> lngVal = Languages.typescript();
-            case JS -> lngVal = Languages.javascript();
-            case C -> lngVal = Languages.c();
-            case CPP -> lngVal = Languages.cpp();
-            case PY -> lngVal = Languages.python();
-            default -> {
-            }
-        }
-        return lngVal;
     }
 
 }
