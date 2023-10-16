@@ -6,6 +6,8 @@ public interface LngParser {
     
     long getLngTreeSitter();
 
-    LngStmtEnum getLngStmtEnum(Node currNode, boolean searchSubElmt);
+    LngStmtEnum getLngStmtEnum(Node currNode);
+
+    boolean isStmt(Node currNode, LngStmtEnum stmtParent, LngStmtEnum stmtToSearch);
 
 }

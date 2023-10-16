@@ -32,24 +32,25 @@ public class StmtReadProp {
         return stmtConfs;
     }
 
-    static public LngStmtEnum getStmtConfsByName(Node currNode, List<StmtConf> allStmtConfs, boolean searchSubElmt) {
+    static public LngStmtEnum getStmtConfsByName(Node currNode, List<StmtConf> allStmtConfs) {
         LngStmtEnum result = null;
         String value = currNode.getType();
-        List<StmtConf> subList;
-        if (searchSubElmt) {
-            String valTmp = currNode.getParent().getType() + "/" + value;
-            subList = allStmtConfs.stream().filter(
-                    it -> (it.getTokens().stream().filter(t -> valTmp.matches(t)).findAny().orElse(null)) != null)
-                    .collect(Collectors.toList());
-        } else {
-            subList = allStmtConfs.stream().filter(it -> it.getTokens().contains(value))
-                    .collect(Collectors.toList());
-        }
+        List<StmtConf> subList = allStmtConfs.stream().filter(it -> it.getTokens().contains(value))
+                .collect(Collectors.toList());
 
-        if (subList.size() == 0 && !searchSubElmt) {
+        if (subList.size() == 0) {
             String valTmp = findNodePath(currNode);
             subList = allStmtConfs.stream().filter(
                     it -> (it.getTokens().stream().filter(t -> valTmp.endsWith(t)).findAny().orElse(null)) != null)
+                    .collect(Collectors.toList());
+        }
+        if (subList.size() == 0 && !currNode.getParent().isNull()) {
+            String valTmp = currNode.getParent().getType() + "/" + value;
+            subList = allStmtConfs.stream().filter(
+                    it -> (it.getTokens().stream()
+                            .filter(t -> valTmp.matches(t))
+                            .findAny()
+                            .orElse(null)) != null)
                     .collect(Collectors.toList());
         }
         if (subList.size() == 1) {
@@ -59,13 +60,77 @@ public class StmtReadProp {
         return result;
     }
 
-    private static String findNodePath (Node currNode) {
+    public static boolean getStmtByName(Node currNode, List<StmtConf> allStmtConfs,
+            LngStmtEnum stmtParent, LngStmtEnum stmtToSearch) {
+        StmtConf stmtConfToSearch = allStmtConfs.stream()
+                .filter(it -> it.getName().equals(stmtToSearch))
+                .findFirst()
+                .orElse(null);
+        StmtConf stmtConfToParent = allStmtConfs.stream()
+                .filter(it -> it.getName().equals(stmtParent))
+                .findFirst()
+                .orElse(null);
+        boolean result = false;
+        String value = currNode.getType();
+        boolean startsWithParent = stmtConfToParent.getTokens().stream()
+                .filter(it -> it.startsWith(value)).findFirst().orElse(null) != null;
+        for (String token : stmtConfToSearch.getTokens()) {
+            if (startsWithParent && !result) {
+                result = compareNode(currNode, value, token);
+            } else {
+                for (String parentToken : stmtConfToParent.getTokens()) {
+                    String firstParent = parentToken.split("/")[0];
+                    if (token.startsWith(firstParent)) {
+                        Node parent = getNodeParent(currNode, firstParent);
+                        if (parent != null) {
+                            result = compareNode(parent, firstParent, token);
+                        }
+                    }
+                    if (result) {
+                        break;
+                    }
+                }
+            }
+            if (result) {
+                break;
+            }
+        }
+        return result;
+    }
+
+    private static Node getNodeParent(Node curNode, String firstParent) {
+        Node result = null;
+        if (!curNode.getParent().isNull()) {
+            if (curNode.getParent().getType().equals(firstParent)) {
+                result = curNode.getParent();
+            } else {
+                result = getNodeParent(curNode.getParent(), firstParent);
+            }
+        }
+        return result;
+    }
+
+    private static boolean compareNode(Node currNode, String value, String token) {
+        boolean result = false;
+        for (int i = 0; i < currNode.getChildCount(); i++) {
+            String name = value + "/" + currNode.getChild(i).getType();
+            if (!result && token.equals(name)) {
+                result = true;
+            }
+            if (!result && name.matches(token)) {
+                result = true;
+            }
+        }
+        return result;
+    }
+
+    private static String findNodePath(Node currNode) {
         String path = null;
-        if(!currNode.getParent().isNull()) {
+        if (!currNode.getParent().isNull()) {
             path = findNodePath(currNode.getParent());
         }
 
-        if(path != null){
+        if (path != null) {
             path += "/" + currNode.getType();
         } else {
             path = currNode.getType();

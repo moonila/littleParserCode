@@ -106,7 +106,7 @@ public class TreeSitterParser {
                     // System.out.println(currNode.getNodeString());
                 }
                 NodeBean parent = new NodeBean();
-                NodeBean nodeBean = processChild(currNode, parent, source, true, lngParser, false);
+                NodeBean nodeBean = processChild(currNode, parent, source, true, lngParser);
                 kind.setStartLine(nodeBean.getStartLine());
                 kind.setEndLine(nodeBean.getEndLine());
 
@@ -218,10 +218,10 @@ public class TreeSitterParser {
     }
 
     private NodeBean processChild(Node currNode, NodeBean parent, String source, boolean isFirst,
-            LngParser lngParser, boolean searchSubElmt) {
+            LngParser lngParser) {
         NodeBean nodeBean = new NodeBean();
         String type = currNode.getType();
-        LngStmtEnum value = lngParser.getLngStmtEnum(currNode, searchSubElmt);
+        LngStmtEnum value = lngParser.getLngStmtEnum(currNode);
 
         boolean isFct = false;
         if (value != null) {
@@ -230,11 +230,14 @@ public class TreeSitterParser {
             if (isFct) {
                 nodeBean.setType(KindType.FUNCTION);
             } else {
-                searchSubElmt = false;
                 switch (value) {
                     case IF_STMT:
                         updateMeasure(parent.getMeasureList(), NB_IF_MSR, "Number of if");
-                        searchSubElmt = true;
+                        boolean containsThen = lngParser.isStmt(currNode, LngStmtEnum.IF_STMT,
+                                LngStmtEnum.THEN_STMT);
+                        if (containsThen) {
+                            updateMeasure(parent.getMeasureList(), "NB_THEN", "Number of then");
+                        }
                         break;
                     case FOR_STMT:
                         updateMeasure(parent.getMeasureList(), NB_FOR_MSR, "Number of for");
@@ -250,26 +253,25 @@ public class TreeSitterParser {
                         break;
                     case SWITCH_CASE_STMT:
                         updateMeasure(parent.getMeasureList(), NB_SWITCH_CASE_MSR, "Number of switch cases");
-                        searchSubElmt = true;
-                        break;
+                        boolean containsBody = lngParser.isStmt(currNode, LngStmtEnum.SWITCH_CASE_STMT,
+                                LngStmtEnum.CASE_BODY_STMT);
+                        if (containsBody) {
+                            updateMeasure(parent.getMeasureList(), "NB_CASE_BODY", "Number of case body");
+                        }
+                        break;  
                     case TRY_STMT:
                         updateMeasure(parent.getMeasureList(), NB_TRY_MSR, "Number of try");
-                        searchSubElmt = true;
+                        boolean containsTry = lngParser.isStmt(currNode, LngStmtEnum.TRY_STMT,
+                                LngStmtEnum.TRY_BODY_STMT);
+                        if (containsTry) {
+                            updateMeasure(parent.getMeasureList(), "NB_TRY_BODY", "Number of try body");
+                        }
                         break;
                     case CATCH_STMT:
                         updateMeasure(parent.getMeasureList(), NB_CATCH_MSR, "Number of catch");
                         break;
                     case ELSE_STMT:
                         updateMeasure(parent.getMeasureList(), "NB_ELSE", "Number of else");
-                        break;
-                    case THEN_STMT:
-                        updateMeasure(parent.getMeasureList(), "NB_THEN", "Number of then");
-                        break;
-                    case CASE_BODY_STMT:
-                        updateMeasure(parent.getMeasureList(), "NB_CASE_BODY", "Number of case body");
-                        break;
-                    case TRY_BODY_STMT:
-                        updateMeasure(parent.getMeasureList(), "NB_TRY_BODY", "Number of try body");
                         break;
                     default:
                         break;
@@ -295,9 +297,9 @@ public class TreeSitterParser {
             nodeBean.setChild(child);
             for (int i = 0; i < currNode.getChildCount(); i++) {
                 if (isFct) {
-                    child.add(processChild(currNode.getChild(i), nodeBean, source, false, lngParser, searchSubElmt));
+                    child.add(processChild(currNode.getChild(i), nodeBean, source, false, lngParser));
                 } else {
-                    child.add(processChild(currNode.getChild(i), parent, source, false, lngParser, searchSubElmt));
+                    child.add(processChild(currNode.getChild(i), parent, source, false, lngParser));
                 }
             }
         }

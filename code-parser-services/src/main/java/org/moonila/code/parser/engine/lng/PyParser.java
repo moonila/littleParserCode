@@ -19,7 +19,12 @@ public class PyParser implements LngParser {
     }
 
     @Override
-    public LngStmtEnum getLngStmtEnum(Node currNode, boolean searchSubElmt) {
-        return StmtReadProp.getStmtConfsByName(currNode, allStmtConfs, searchSubElmt);
+    public LngStmtEnum getLngStmtEnum(Node currNode) {
+        return StmtReadProp.getStmtConfsByName(currNode, allStmtConfs);
+    }
+
+    @Override
+    public boolean isStmt(Node currNode, LngStmtEnum stmtParent, LngStmtEnum stmtToSearch) {
+        return StmtReadProp.getStmtByName(currNode, allStmtConfs, stmtParent, stmtToSearch);
     }
 }

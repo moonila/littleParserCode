@@ -54,7 +54,7 @@ public class TreeSitterParserTest {
                         assertEquals(3, thenMeasure.getValue());
                         assertEquals("Number of then", thenMeasure.getDescription());
 
-                         Measure elseMeasure = kindFct1.getMeasureList().stream()
+                        Measure elseMeasure = kindFct1.getMeasureList().stream()
                                         .filter(measure -> "NB_ELSE".equals(measure.getName()))
                                         .findAny()
                                         .orElse(null);
@@ -91,7 +91,7 @@ public class TreeSitterParserTest {
                                         .findAny()
                                         .orElse(null);
                         assertNotNull(npathMeasure);
-                        //assertEquals(24, npathMeasure.getValue());
+                        // assertEquals(24, npathMeasure.getValue());
                         assertEquals("The number of acyclic execution paths", npathMeasure.getDescription());
 
                         Kind kindFct2 = resultBean.getKindList().get(2);
@@ -100,7 +100,7 @@ public class TreeSitterParserTest {
                         assertEquals(28, kindFct2.getStartLine());
                         assertEquals(59, kindFct2.getEndLine());
                         assertEquals(31, kindFct2.getNbLines());
-                        assertEquals(8, kindFct2.getMeasureList().size());
+                        assertEquals(11, kindFct2.getMeasureList().size());
                         Measure switchMeasure = kindFct2.getMeasureList().stream()
                                         .filter(measure -> "NB_SWITCH".equals(measure.getName()))
                                         .findAny()
@@ -116,6 +116,22 @@ public class TreeSitterParserTest {
                         assertNotNull(caseMeasure);
                         assertEquals(4, caseMeasure.getValue());
                         assertEquals("Number of switch cases", caseMeasure.getDescription());
+
+                        Measure tryMeasure = kindFct2.getMeasureList().stream()
+                                        .filter(measure -> "NB_TRY".equals(measure.getName()))
+                                        .findAny()
+                                        .orElse(null);
+                        assertNotNull(tryMeasure);
+                        assertEquals(1, tryMeasure.getValue());
+                        assertEquals("Number of try", tryMeasure.getDescription());
+
+                        Measure tryBodyMeasure = kindFct2.getMeasureList().stream()
+                                        .filter(measure -> "NB_TRY_BODY".equals(measure.getName()))
+                                        .findAny()
+                                        .orElse(null);
+                        assertNotNull(tryBodyMeasure);
+                        assertEquals(1, tryBodyMeasure.getValue());
+                        assertEquals("Number of try body", tryBodyMeasure.getDescription());
 
                         Measure catchMeasure = kindFct2.getMeasureList().stream()
                                         .filter(measure -> "NB_CATCH".equals(measure.getName()))
@@ -138,7 +154,7 @@ public class TreeSitterParserTest {
                                         .findAny()
                                         .orElse(null);
                         assertNotNull(npathMeasure2);
-                        //assertEquals(60, npathMeasure2.getValue());
+                        // assertEquals(60, npathMeasure2.getValue());
                         assertEquals("The number of acyclic execution paths", npathMeasure2.getDescription());
 
                 } catch (ParserException e) {
@@ -169,9 +185,9 @@ public class TreeSitterParserTest {
                         assertEquals(4, switchM.getStartLine());
                         assertEquals(42, switchM.getEndLine());
                         assertEquals(38, switchM.getNbLines());
-                        assertEquals(6, switchM.getMeasureList().size());
+                        assertEquals(7, switchM.getMeasureList().size());
 
-                       Measure switchMeasure = switchM.getMeasureList().stream()
+                        Measure switchMeasure = switchM.getMeasureList().stream()
                                         .filter(measure -> "NB_SWITCH".equals(measure.getName()))
                                         .findAny()
                                         .orElse(null);
@@ -187,6 +203,14 @@ public class TreeSitterParserTest {
                         assertEquals(8, caseMeasure.getValue());
                         assertEquals("Number of switch cases", caseMeasure.getDescription());
 
+                        Measure caseBodyMeasure = switchM.getMeasureList().stream()
+                                        .filter(measure -> "NB_CASE_BODY".equals(measure.getName()))
+                                        .findAny()
+                                        .orElse(null);
+                        assertNotNull(caseBodyMeasure);
+                        assertEquals(3, caseBodyMeasure.getValue());
+                        assertEquals("Number of case body", caseBodyMeasure.getDescription());
+
                         Measure ccMeasure = switchM.getMeasureList().stream()
                                         .filter(measure -> "COUNT_CC".equals(measure.getName()))
                                         .findAny()
@@ -200,16 +224,13 @@ public class TreeSitterParserTest {
                                         .findAny()
                                         .orElse(null);
                         assertNotNull(npathMeasure);
-                        //assertEquals(24, npathMeasure.getValue());
+                        // assertEquals(24, npathMeasure.getValue());
                         assertEquals("The number of acyclic execution paths", npathMeasure.getDescription());
-
-        
 
                 } catch (ParserException e) {
                         throw new RuntimeException(e);
                 }
         }
-
 
         @Test
         void treeSitterParserC() {
@@ -289,7 +310,7 @@ public class TreeSitterParserTest {
                                         .findAny()
                                         .orElse(null);
                         assertNotNull(npathMeasure);
-                        //assertEquals(72, npathMeasure.getValue());
+                        // assertEquals(72, npathMeasure.getValue());
                         assertEquals("The number of acyclic execution paths", npathMeasure.getDescription());
 
                 } catch (ParserException e) {
