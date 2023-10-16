@@ -79,7 +79,6 @@ Identification du projet.
         <version>3.4.0</version>
         <configuration>
           <failOnMissingWebXml>false</failOnMissingWebXml>
-          <classifier>${env}</classifier>
         </configuration>
       </plugin>
     </plugins>
