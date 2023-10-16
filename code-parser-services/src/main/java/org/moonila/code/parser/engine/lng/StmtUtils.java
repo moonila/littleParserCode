@@ -10,12 +10,12 @@ import java.util.stream.Collectors;
 
 import ai.serenade.treesitter.Node;
 
-public class StmtReadProp {
+public class StmtUtils {
 
-    static public List<StmtConf> getStmtConf(String propName) {
+    static public List<StmtConf> readLngProp(String propName) {
         List<StmtConf> stmtConfs = new ArrayList<>();
 
-        ClassLoader loader = StmtReadProp.class.getClassLoader();
+        ClassLoader loader = StmtUtils.class.getClassLoader();
         Properties stmProperties = new Properties();
         try (InputStream loaderStr = loader.getResourceAsStream(propName)) {
             stmProperties.load(loaderStr);
@@ -32,16 +32,19 @@ public class StmtReadProp {
         return stmtConfs;
     }
 
-    static public LngStmtEnum getStmtConfsByName(Node currNode, List<StmtConf> allStmtConfs) {
+    static public LngStmtEnum getStmt(Node currNode, List<StmtConf> allStmtConfs) {
         LngStmtEnum result = null;
         String value = currNode.getType();
-        List<StmtConf> subList = allStmtConfs.stream().filter(it -> it.getTokens().contains(value))
+        List<StmtConf> subList = allStmtConfs.stream()
+                .filter(it -> it.getTokens().contains(value))
                 .collect(Collectors.toList());
 
         if (subList.size() == 0) {
             String valTmp = findNodePath(currNode);
             subList = allStmtConfs.stream().filter(
-                    it -> (it.getTokens().stream().filter(t -> valTmp.endsWith(t)).findAny().orElse(null)) != null)
+                    it -> (it.getTokens().stream()
+                            .filter(t -> valTmp.endsWith(t))
+                            .findAny().orElse(null)) != null)
                     .collect(Collectors.toList());
         }
         if (subList.size() == 0 && !currNode.getParent().isNull()) {

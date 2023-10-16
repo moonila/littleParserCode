@@ -10,7 +10,7 @@ public class JavaParser implements LngParser {
     private List<StmtConf> allStmtConfs;
 
     public JavaParser() {
-        allStmtConfs = StmtReadProp.getStmtConf("parser/config/java_stmt.properties");
+        allStmtConfs = StmtUtils.readLngProp("parser/config/java_stmt.properties");
     }
 
     @Override
@@ -20,12 +20,12 @@ public class JavaParser implements LngParser {
 
     @Override
     public LngStmtEnum getLngStmtEnum(Node currNode) {
-        return StmtReadProp.getStmtConfsByName(currNode, allStmtConfs);
+        return StmtUtils.getStmt(currNode, allStmtConfs);
     }
 
     @Override
     public boolean isStmt(Node currNode, LngStmtEnum stmtParent, LngStmtEnum stmtToSearch) {
-        return StmtReadProp.getStmtByName(currNode, allStmtConfs, stmtParent, stmtToSearch);
+        return StmtUtils.getStmtByName(currNode, allStmtConfs, stmtParent, stmtToSearch);
     }
 
 }
