@@ -115,7 +115,7 @@ public class TreeSitterParserTest {
                                         .orElse(null);
                         assertNotNull(caseMeasure);
                         assertEquals(4, caseMeasure.getValue());
-                        assertEquals("Number of switch cases", caseMeasure.getDescription());
+                        assertEquals("Number of switch case", caseMeasure.getDescription());
 
                         Measure tryMeasure = kindFct2.getMeasureList().stream()
                                         .filter(measure -> "NB_TRY".equals(measure.getName()))
@@ -185,7 +185,7 @@ public class TreeSitterParserTest {
                         assertEquals(4, switchM.getStartLine());
                         assertEquals(42, switchM.getEndLine());
                         assertEquals(38, switchM.getNbLines());
-                        assertEquals(7, switchM.getMeasureList().size());
+                        assertEquals(8, switchM.getMeasureList().size());
 
                         Measure switchMeasure = switchM.getMeasureList().stream()
                                         .filter(measure -> "NB_SWITCH".equals(measure.getName()))
@@ -201,7 +201,7 @@ public class TreeSitterParserTest {
                                         .orElse(null);
                         assertNotNull(caseMeasure);
                         assertEquals(8, caseMeasure.getValue());
-                        assertEquals("Number of switch cases", caseMeasure.getDescription());
+                        assertEquals("Number of switch case", caseMeasure.getDescription());
 
                         Measure caseBodyMeasure = switchM.getMeasureList().stream()
                                         .filter(measure -> "NB_CASE_BODY".equals(measure.getName()))

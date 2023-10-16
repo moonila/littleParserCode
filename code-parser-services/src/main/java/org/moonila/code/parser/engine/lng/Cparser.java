@@ -7,7 +7,7 @@ import ai.serenade.treesitter.Node;
 
 public class Cparser implements LngParser {
 
-    List<StmtConf> allStmtConfs;
+    private List<StmtConf> allStmtConfs;
 
     public Cparser() {
         allStmtConfs = StmtReadProp.getStmtConf("parser/config/c_stmt.properties");

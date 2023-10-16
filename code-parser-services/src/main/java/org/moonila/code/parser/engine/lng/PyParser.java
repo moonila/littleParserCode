@@ -7,7 +7,7 @@ import ai.serenade.treesitter.Node;
 
 public class PyParser implements LngParser {
 
-    List<StmtConf> allStmtConfs;
+    private List<StmtConf> allStmtConfs;
 
     public PyParser() {
         allStmtConfs = StmtReadProp.getStmtConf("parser/config/py_stmt.properties");
