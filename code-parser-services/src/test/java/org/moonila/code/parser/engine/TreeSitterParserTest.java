@@ -224,7 +224,7 @@ public class TreeSitterParserTest {
                                         .findAny()
                                         .orElse(null);
                         assertNotNull(npathMeasure);
-                        // assertEquals(24, npathMeasure.getValue());
+                        // assertEquals(20, npathMeasure.getValue());
                         assertEquals("The number of acyclic execution paths", npathMeasure.getDescription());
 
                 } catch (ParserException e) {

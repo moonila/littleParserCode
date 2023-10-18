@@ -14,7 +14,9 @@ import org.moonila.code.parser.engine.beans.ResultBean;
 import org.moonila.code.parser.engine.lng.LngParser;
 import org.moonila.code.parser.engine.lng.LngStmtEnum;
 import org.moonila.code.parser.engine.measure.Measure;
+import org.moonila.code.parser.engine.measure.MeasureEnum;
 import org.moonila.code.parser.engine.measure.MeasureUtils;
+import org.moonila.code.parser.engine.measure.NpatCtx;
 
 import java.io.File;
 import java.io.IOException;
@@ -96,7 +98,7 @@ public class TreeSitterParser {
                     // System.out.println(currNode.getNodeString());
                 }
                 NodeBean parent = new NodeBean();
-                NodeBean nodeBean = processChild(currNode, parent, source, true, lngParser);
+                NodeBean nodeBean = processChild(currNode, parent, source, true, lngParser, null);
                 kind.setStartLine(nodeBean.getStartLine());
                 kind.setEndLine(nodeBean.getEndLine());
 
@@ -116,8 +118,11 @@ public class TreeSitterParser {
                     Measure measureCC = MeasureUtils.countComplexitCyclomatic(fct.getMeasureList());
                     kindFct.addMeasure(measureCC);
 
-                    // double npatValue = Math.pow(2, (measureCC.getValue() - 1));
-                    Measure measureNpath = MeasureUtils.countNpath(fct.getMeasureList(), (measureCC.getValue() - 1));
+                    double npatValue = MeasureUtils.countNpat(fct.getNpatCtx());
+                    Measure measureNpath = new Measure();
+                    measureNpath.setName(MeasureEnum.COUNT_NPATH.name());
+                    measureNpath.setDescription(MeasureEnum.COUNT_NPATH.getMeasureDesc());
+                    measureNpath.setValue((long) npatValue);
                     kindFct.addMeasure(measureNpath);
                 }
 
@@ -157,20 +162,25 @@ public class TreeSitterParser {
     }
 
     private NodeBean processChild(Node currNode, NodeBean parent, String source, boolean isFirst,
-            LngParser lngParser) {
+            LngParser lngParser, NpatCtx npatCtx) {
         NodeBean nodeBean = new NodeBean();
         String type = currNode.getType();
         LngStmtEnum value = lngParser.getLngStmtEnum(currNode);
-
         boolean isFct = false;
         if (value != null) {
             isFct = LngStmtEnum.FCT_STMT == value;
             nodeBean.setName(type);
             if (isFct) {
+                npatCtx = new NpatCtx();
+                nodeBean.setNpatCtx(npatCtx);
+                // measureNpath.setName(MeasureEnum.COUNT_NPATH.name());
+                // measureNpath.setDescription(MeasureEnum.COUNT_NPATH.getMeasureDesc());
+                // nodeBean.addMeasure(measureNpath);
                 nodeBean.setType(KindType.FUNCTION);
             } else {
                 nodeBean.setType(KindType.STATEMENT);
-                MeasureUtils.countStmtMeasure(value, parent.getMeasureList(), currNode, lngParser);
+                MeasureUtils.countStmtMeasure(value, parent.getMeasureList(), currNode,
+                        lngParser, npatCtx);
             }
             if (!isFirst) {
                 String text = source.substring(currNode.getStartByte(), currNode.getEndByte());
@@ -190,10 +200,18 @@ public class TreeSitterParser {
             List<NodeBean> child = new ArrayList<>();
             nodeBean.setChild(child);
             for (int i = 0; i < currNode.getChildCount(); i++) {
-                if (isFct) {
-                    child.add(processChild(currNode.getChild(i), nodeBean, source, false, lngParser));
+                NpatCtx newNpatCtx;
+                if (npatCtx != null) {
+                    newNpatCtx = new NpatCtx();
+                    npatCtx.addNpatCtx(newNpatCtx);
                 } else {
-                    child.add(processChild(currNode.getChild(i), parent, source, false, lngParser));
+                    newNpatCtx = npatCtx;
+                }
+
+                if (isFct) {
+                    child.add(processChild(currNode.getChild(i), nodeBean, source, false, lngParser, newNpatCtx));
+                } else {
+                    child.add(processChild(currNode.getChild(i), parent, source, false, lngParser, newNpatCtx));
                 }
             }
         }

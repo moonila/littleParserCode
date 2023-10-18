@@ -9,10 +9,13 @@ import ai.serenade.treesitter.Node;
 
 public class MeasureUtils {
 
-    public static void countStmtMeasure(LngStmtEnum value, List<Measure> measureList,
-            Node currNode, LngParser lngParser) {
-        switch (value) {
+    public static void countStmtMeasure(LngStmtEnum lngStmt, List<Measure> measureList,
+            Node currNode, LngParser lngParser, NpatCtx npatCtx) {
+        double value = npatCtx != null ? npatCtx.getValue() : 0.0;
+        switch (lngStmt) {
             case IF_STMT:
+                value += +1;
+                npatCtx.setAdd(true);
                 updateMeasure(measureList, MeasureEnum.NB_IF);
                 boolean containsThen = lngParser.isStmt(currNode, LngStmtEnum.IF_STMT,
                         LngStmtEnum.THEN_STMT);
@@ -21,18 +24,28 @@ public class MeasureUtils {
                 }
                 break;
             case FOR_STMT:
+                value += 1;
+                npatCtx.setMultiply(true);
                 updateMeasure(measureList, MeasureEnum.NB_FOR);
                 break;
             case DO_STMT:
+                value += 1;
+                npatCtx.setMultiply(true);
                 updateMeasure(measureList, MeasureEnum.NB_DO);
                 break;
             case WHILE_STMT:
+                value += 1;
+                npatCtx.setMultiply(true);
                 updateMeasure(measureList, MeasureEnum.NB_WHILE);
                 break;
             case SWITCH_STMT:
+                value += 1;
+                npatCtx.setAdd(true);
                 updateMeasure(measureList, MeasureEnum.NB_SWITCH);
                 break;
             case SWITCH_CASE_STMT:
+                value += 1;
+                npatCtx.setMultiply(true);
                 updateMeasure(measureList, MeasureEnum.NB_SWITCH_CASE);
                 boolean containsBody = lngParser.isStmt(currNode, LngStmtEnum.SWITCH_CASE_STMT,
                         LngStmtEnum.CASE_BODY_STMT);
@@ -41,6 +54,8 @@ public class MeasureUtils {
                 }
                 break;
             case TRY_STMT:
+                value += 1;
+                npatCtx.setAdd(true);
                 updateMeasure(measureList, MeasureEnum.NB_TRY);
                 boolean containsTry = lngParser.isStmt(currNode, LngStmtEnum.TRY_STMT,
                         LngStmtEnum.TRY_BODY_STMT);
@@ -49,18 +64,29 @@ public class MeasureUtils {
                 }
                 break;
             case CATCH_STMT:
+                value += 1;
+                npatCtx.setAdd(true);
                 updateMeasure(measureList, MeasureEnum.NB_CATCH);
                 break;
             case ELSE_STMT:
+                value += 1;
+                npatCtx.setMultiply(true);
                 updateMeasure(measureList, MeasureEnum.NB_ELSE);
                 break;
             case FINALLY_STMT:
+                value += 1;
+                npatCtx.setMultiply(true);
                 updateMeasure(measureList, MeasureEnum.NB_FINALLY);
                 break;
             case DEFAULT_STMT:
+                value += 1;
+                npatCtx.setMultiply(true);
                 updateMeasure(measureList, MeasureEnum.NB_DEFAULT);
             default:
                 break;
+        }
+        if (npatCtx != null) {
+            npatCtx.setValue(value);
         }
     }
 
@@ -72,21 +98,16 @@ public class MeasureUtils {
         return measureTmp;
     }
 
-    public static Measure countNpath(List<Measure> measures, long measureCC) {
-        long elseValue = measures.stream()
-                .filter(measure -> measure.getName().equals(MeasureEnum.NB_ELSE.name()))
-                .mapToLong(o -> o.getValue()).sum();
-        long caseValue = measures.stream()
-                .filter(measure -> measure.getName().equals(MeasureEnum.NB_SWITCH_CASE.name()))
-                .mapToLong(o -> o.getValue()).sum();
+    public static double countNpat(NpatCtx npatCtx) {
+        double value = 0;
+        if (npatCtx.getNpatCtxList() != null) {
+            for (NpatCtx nCtx : npatCtx.getNpatCtxList()) {
+                value = countNpat(nCtx);
+            }
+            value = value + Math.pow(2, (npatCtx.getNpatCtxList().size()));
+        }
 
-        long npatValue = measureCC * (2 * (elseValue + caseValue));
-        Measure measureNpath = new Measure();
-        measureNpath.setName(MeasureEnum.COUNT_NPATH.name());
-        measureNpath.setDescription(MeasureEnum.COUNT_NPATH.getMeasureDesc());
-        measureNpath.setValue(npatValue);
-
-        return measureNpath;
+        return value;
     }
 
     public static Double multiply(List<Double> results) {

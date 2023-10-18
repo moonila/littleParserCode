@@ -2,6 +2,7 @@ package org.moonila.code.parser.engine.beans;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.moonila.code.parser.engine.measure.Measure;
+import org.moonila.code.parser.engine.measure.NpatCtx;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,8 @@ public class NodeBean {
     private int startLine;
 
     private int endLine;
+
+    private NpatCtx npatCtx;
 
 
     public String getName() {
@@ -84,4 +87,17 @@ public class NodeBean {
     public void setEndLine(int endLine) {
         this.endLine = endLine;
     }
+
+    public void setMeasureList(List<Measure> measureList) {
+        this.measureList = measureList;
+    }
+
+    public NpatCtx getNpatCtx() {
+        return this.npatCtx;
+    }
+
+    public void setNpatCtx(NpatCtx npatCtx) {
+        this.npatCtx = npatCtx;
+    }
+
 }
