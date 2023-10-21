@@ -1,7 +1,8 @@
-package org.moonila.code.parser.engine;
+package org.moonila.code.parser.engine.beans;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.moonila.code.parser.engine.measure.Measure;
+import org.moonila.code.parser.engine.measure.StmtCtx;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +12,7 @@ public class NodeBean {
 
     private String name;
     private String description;
-    private List<NodeBean> child;
+    private List<NodeBean> children;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)	
     private List<Measure> measureList;
@@ -21,6 +22,10 @@ public class NodeBean {
     private int startLine;
 
     private int endLine;
+
+    private StmtCtx stmtCtx;
+
+    private NodeBean parent;
 
 
     public String getName() {
@@ -39,12 +44,12 @@ public class NodeBean {
         this.description = description;
     }
 
-    public List<NodeBean> getChild() {
-        return child;
+    public List<NodeBean> getChildren() {
+        return children;
     }
 
-    public void setChild(List<NodeBean> child) {
-        this.child = child;
+    public void setChildren(List<NodeBean> children) {
+        this.children = children;
     }
 
     public List<Measure> getMeasureList() {
@@ -83,5 +88,25 @@ public class NodeBean {
 
     public void setEndLine(int endLine) {
         this.endLine = endLine;
+    }
+
+    public void setMeasureList(List<Measure> measureList) {
+        this.measureList = measureList;
+    }
+
+    public StmtCtx getStmtCtx() {
+        return this.stmtCtx;
+    }
+
+    public void setStmtCtx(StmtCtx stmtCtx) {
+        this.stmtCtx = stmtCtx;
+    }
+
+    public NodeBean getParent() {
+        return parent;
+    }
+
+    public void setParent(NodeBean parent) {
+        this.parent = parent;
     }
 }

@@ -1,23 +1,25 @@
-package org.moonila.code.parser.engine;
+package org.moonila.code.parser.engine.beans;
+
+import org.moonila.code.parser.engine.measure.StmtCtx;
 
 import java.util.List;
 
 public class ResultBean {
 
-    public ResultBean(List<Kind> kindList, NodeBean nodeBean) {
+    private StmtCtx nodeBean;
+
+    private List<Kind> kindList;
+
+    public ResultBean(List<Kind> kindList, StmtCtx nodeBean) {
         this.nodeBean = nodeBean;
         this.kindList = kindList;
     }
 
-    private NodeBean nodeBean;
-
-    private List<Kind> kindList;
-
-    public NodeBean getNodeBean() {
+    public StmtCtx getNodeBean() {
         return nodeBean;
     }
 
-    public void setNodeBean(NodeBean nodeBean) {
+    public void setNodeBean(StmtCtx nodeBean) {
         this.nodeBean = nodeBean;
     }
 
