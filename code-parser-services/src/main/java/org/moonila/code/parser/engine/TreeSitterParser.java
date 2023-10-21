@@ -16,7 +16,7 @@ import org.moonila.code.parser.engine.lng.LngStmtEnum;
 import org.moonila.code.parser.engine.measure.Measure;
 import org.moonila.code.parser.engine.measure.MeasureEnum;
 import org.moonila.code.parser.engine.measure.MeasureUtils;
-import org.moonila.code.parser.engine.measure.NpatCtx;
+import org.moonila.code.parser.engine.measure.StmtCtx;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,9 +24,13 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public class TreeSitterParser {
 
@@ -98,27 +102,30 @@ public class TreeSitterParser {
                     // System.out.println(currNode.getNodeString());
                 }
                 NodeBean parent = new NodeBean();
-                NodeBean nodeBean = processChild(currNode, parent, source, true, lngParser, null);
+                NodeBean nodeBean = processChild(currNode, parent, source, true, lngParser);
+                initStmtCtx(nodeBean);
                 kind.setStartLine(nodeBean.getStartLine());
                 kind.setEndLine(nodeBean.getEndLine());
 
                 List<NodeBean> functions = getChild(nodeBean);
-                kind.addMeasure(MeasureUtils.countNbFct((long) functions.size()));
+                kind.addMeasure(MeasureUtils.countNbFct(functions.size()));
 
                 for (NodeBean fct : functions) {
                     Kind kindFct = new Kind();
                     kindFct.setKindType(fct.getType());
                     kindFct.setStartLine(fct.getStartLine());
                     kindFct.setEndLine(fct.getEndLine());
-                    kindFct.getMeasureList().addAll(fct.getMeasureList());
+                    kindFct.getMeasureList().addAll(findAllMeasures(fct));
                     String fctName = getNodeBeanName(fct.getDescription());
                     kindFct.setName(fctName);
                     kindList.add(kindFct);
 
-                    Measure measureCC = MeasureUtils.countComplexitCyclomatic(fct.getMeasureList());
+                    Measure measureCC = MeasureUtils.countComplexityCyclomatic(kindFct.getMeasureList());
                     kindFct.addMeasure(measureCC);
 
-                    double npatValue = MeasureUtils.countNpat(fct.getNpatCtx());
+                    String result = new ObjectMapper().writeValueAsString(fct.getStmtCtx());
+                    System.out.println(result);
+                    double npatValue = MeasureUtils.countNpat(fct.getStmtCtx(), false);
                     Measure measureNpath = new Measure();
                     measureNpath.setName(MeasureEnum.COUNT_NPATH.name());
                     measureNpath.setDescription(MeasureEnum.COUNT_NPATH.getMeasureDesc());
@@ -126,11 +133,37 @@ public class TreeSitterParser {
                     kindFct.addMeasure(measureNpath);
                 }
 
-                return new ResultBean(kindList, nodeBean);
+                return new ResultBean(kindList, nodeBean.getStmtCtx());
             }
         } catch (IOException | UnsatisfiedLinkError e) {
             e.printStackTrace();
             throw new ParserException(e.getMessage());
+        }
+    }
+
+    private List<Measure> findAllMeasures(NodeBean nodeBean) {
+        Map<String, Measure> allMeasures = nodeBean.getMeasureList().stream()
+                .collect(Collectors.toMap(Measure::getName, measure -> measure));
+        for (NodeBean child : nodeBean.getChild()) {
+            findMeasures(child, allMeasures);
+        }
+
+        return new ArrayList<>(allMeasures.values());
+    }
+
+    private void findMeasures(NodeBean nodeBean, Map<String, Measure> allMeasures) {
+        for (Measure measure : nodeBean.getMeasureList()) {
+            Measure mTmp = allMeasures.get(measure.getName());
+            if (mTmp == null) {
+                allMeasures.put(measure.getName(), measure);
+            } else {
+                mTmp.setValue(measure.getValue() + mTmp.getValue());
+            }
+        }
+        if (nodeBean.getChild() != null) {
+            for (NodeBean child : nodeBean.getChild()) {
+                findMeasures(child, allMeasures);
+            }
         }
     }
 
@@ -145,6 +178,34 @@ public class TreeSitterParser {
             }
         }
         return functions;
+    }
+
+    private StmtCtx initStmtCtx(NodeBean nodeBean) {
+        StmtCtx stmtCtx = nodeBean.getStmtCtx();
+        if (nodeBean.getChild() != null) {
+            for (NodeBean child : nodeBean.getChild()) {
+                StmtCtx stmtCtxChild = initStmtCtx(child);
+                if (stmtCtxChild != null) {
+                    if (nodeBean.getStmtCtx() == null) {
+                        NodeBean parent = findParent(nodeBean);
+                        parent.getStmtCtx().addStmtCtx(stmtCtxChild);
+                    } else {
+                        nodeBean.getStmtCtx().addStmtCtx(stmtCtxChild);
+                    }
+                }
+            }
+        }
+        return stmtCtx;
+    }
+
+    private NodeBean findParent(NodeBean nodeBean) {
+        NodeBean parent = null;
+        if (nodeBean.getParent().getStmtCtx() == null) {
+            parent = findParent(nodeBean.getParent());
+        } else {
+            parent = nodeBean.getParent();
+        }
+        return parent;
     }
 
     private String getNodeBeanName(String description) {
@@ -162,8 +223,9 @@ public class TreeSitterParser {
     }
 
     private NodeBean processChild(Node currNode, NodeBean parent, String source, boolean isFirst,
-            LngParser lngParser, NpatCtx npatCtx) {
+                                  LngParser lngParser) {
         NodeBean nodeBean = new NodeBean();
+        nodeBean.setParent(parent);
         String type = currNode.getType();
         LngStmtEnum value = lngParser.getLngStmtEnum(currNode);
         boolean isFct = false;
@@ -171,16 +233,15 @@ public class TreeSitterParser {
             isFct = LngStmtEnum.FCT_STMT == value;
             nodeBean.setName(type);
             if (isFct) {
-                npatCtx = new NpatCtx();
-                nodeBean.setNpatCtx(npatCtx);
-                // measureNpath.setName(MeasureEnum.COUNT_NPATH.name());
-                // measureNpath.setDescription(MeasureEnum.COUNT_NPATH.getMeasureDesc());
-                // nodeBean.addMeasure(measureNpath);
+                StmtCtx stmtCtx = new StmtCtx();
+                stmtCtx.setStmtName(LngStmtEnum.FCT_STMT.getStmtProp());
+                nodeBean.setStmtCtx(stmtCtx);
                 nodeBean.setType(KindType.FUNCTION);
             } else {
                 nodeBean.setType(KindType.STATEMENT);
-                MeasureUtils.countStmtMeasure(value, parent.getMeasureList(), currNode,
-                        lngParser, npatCtx);
+                StmtCtx stmtCtx = MeasureUtils.countStmtMeasure(value, parent.getMeasureList(), currNode,
+                        lngParser);
+                nodeBean.setStmtCtx(stmtCtx);
             }
             if (!isFirst) {
                 String text = source.substring(currNode.getStartByte(), currNode.getEndByte());
@@ -200,19 +261,11 @@ public class TreeSitterParser {
             List<NodeBean> child = new ArrayList<>();
             nodeBean.setChild(child);
             for (int i = 0; i < currNode.getChildCount(); i++) {
-                NpatCtx newNpatCtx;
-                if (npatCtx != null) {
-                    newNpatCtx = new NpatCtx();
-                    npatCtx.addNpatCtx(newNpatCtx);
-                } else {
-                    newNpatCtx = npatCtx;
-                }
-
-                if (isFct) {
-                    child.add(processChild(currNode.getChild(i), nodeBean, source, false, lngParser, newNpatCtx));
-                } else {
-                    child.add(processChild(currNode.getChild(i), parent, source, false, lngParser, newNpatCtx));
-                }
+//                if (isFct) {
+                child.add(processChild(currNode.getChild(i), nodeBean, source, false, lngParser));
+//                } else {
+//                    child.add(processChild(currNode.getChild(i), parent, source, false, lngParser));
+//                }
             }
         }
         return nodeBean;

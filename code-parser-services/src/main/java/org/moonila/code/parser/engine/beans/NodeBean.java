@@ -2,7 +2,7 @@ package org.moonila.code.parser.engine.beans;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.moonila.code.parser.engine.measure.Measure;
-import org.moonila.code.parser.engine.measure.NpatCtx;
+import org.moonila.code.parser.engine.measure.StmtCtx;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +23,9 @@ public class NodeBean {
 
     private int endLine;
 
-    private NpatCtx npatCtx;
+    private StmtCtx stmtCtx;
+
+    private NodeBean parent;
 
 
     public String getName() {
@@ -92,12 +94,19 @@ public class NodeBean {
         this.measureList = measureList;
     }
 
-    public NpatCtx getNpatCtx() {
-        return this.npatCtx;
+    public StmtCtx getStmtCtx() {
+        return this.stmtCtx;
     }
 
-    public void setNpatCtx(NpatCtx npatCtx) {
-        this.npatCtx = npatCtx;
+    public void setStmtCtx(StmtCtx stmtCtx) {
+        this.stmtCtx = stmtCtx;
     }
 
+    public NodeBean getParent() {
+        return parent;
+    }
+
+    public void setParent(NodeBean parent) {
+        this.parent = parent;
+    }
 }

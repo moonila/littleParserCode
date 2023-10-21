@@ -1,5 +1,6 @@
 package org.moonila.code.parser.engine.measure;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.moonila.code.parser.engine.lng.LngParser;
@@ -9,85 +10,81 @@ import ai.serenade.treesitter.Node;
 
 public class MeasureUtils {
 
-    public static void countStmtMeasure(LngStmtEnum lngStmt, List<Measure> measureList,
-            Node currNode, LngParser lngParser, NpatCtx npatCtx) {
-        double value = npatCtx != null ? npatCtx.getValue() : 0.0;
+    public static StmtCtx countStmtMeasure(LngStmtEnum lngStmt, List<Measure> measureList,
+                                           Node currNode, LngParser lngParser) {
+        StmtCtx stmtCtx = new StmtCtx();
         switch (lngStmt) {
-            case IF_STMT:
-                value += +1;
-                npatCtx.setAdd(true);
+            case IF_STMT -> {
+                stmtCtx.setAdd(true);
                 updateMeasure(measureList, MeasureEnum.NB_IF);
                 boolean containsThen = lngParser.isStmt(currNode, LngStmtEnum.IF_STMT,
                         LngStmtEnum.THEN_STMT);
                 if (containsThen) {
+                    stmtCtx.setThenStmt(true);
                     updateMeasure(measureList, MeasureEnum.NB_THEN);
                 }
-                break;
-            case FOR_STMT:
-                value += 1;
-                npatCtx.setMultiply(true);
+            }
+            case FOR_STMT -> {
+                stmtCtx.setMultiply(true);
+                stmtCtx.setLoopStmt(true);
                 updateMeasure(measureList, MeasureEnum.NB_FOR);
-                break;
-            case DO_STMT:
-                value += 1;
-                npatCtx.setMultiply(true);
+            }
+            case DO_STMT -> {
+                stmtCtx.setMultiply(true);
+                stmtCtx.setLoopStmt(true);
                 updateMeasure(measureList, MeasureEnum.NB_DO);
-                break;
-            case WHILE_STMT:
-                value += 1;
-                npatCtx.setMultiply(true);
+            }
+            case WHILE_STMT -> {
+                stmtCtx.setMultiply(true);
+                stmtCtx.setLoopStmt(true);
                 updateMeasure(measureList, MeasureEnum.NB_WHILE);
-                break;
-            case SWITCH_STMT:
-                value += 1;
-                npatCtx.setAdd(true);
+            }
+            case SWITCH_STMT -> {
+                stmtCtx.setAdd(true);
                 updateMeasure(measureList, MeasureEnum.NB_SWITCH);
-                break;
-            case SWITCH_CASE_STMT:
-                value += 1;
-                npatCtx.setMultiply(true);
+            }
+            case SWITCH_CASE_STMT -> {
                 updateMeasure(measureList, MeasureEnum.NB_SWITCH_CASE);
                 boolean containsBody = lngParser.isStmt(currNode, LngStmtEnum.SWITCH_CASE_STMT,
                         LngStmtEnum.CASE_BODY_STMT);
                 if (containsBody) {
+                    stmtCtx.setThenStmt(true);
+                    stmtCtx.setMultiply(true);
                     updateMeasure(measureList, MeasureEnum.NB_CASE_BODY);
                 }
-                break;
-            case TRY_STMT:
-                value += 1;
-                npatCtx.setAdd(true);
+            }
+            case TRY_STMT -> {
+                stmtCtx.setAdd(true);
                 updateMeasure(measureList, MeasureEnum.NB_TRY);
                 boolean containsTry = lngParser.isStmt(currNode, LngStmtEnum.TRY_STMT,
                         LngStmtEnum.TRY_BODY_STMT);
                 if (containsTry) {
                     updateMeasure(measureList, MeasureEnum.NB_TRY_BODY);
                 }
-                break;
-            case CATCH_STMT:
-                value += 1;
-                npatCtx.setAdd(true);
+            }
+            case CATCH_STMT -> {
+                stmtCtx.setAdd(true);
                 updateMeasure(measureList, MeasureEnum.NB_CATCH);
-                break;
-            case ELSE_STMT:
-                value += 1;
-                npatCtx.setMultiply(true);
+            }
+            case ELSE_STMT -> {
+                stmtCtx.setMultiply(true);
+                stmtCtx.setElseStmt(true);
                 updateMeasure(measureList, MeasureEnum.NB_ELSE);
-                break;
-            case FINALLY_STMT:
-                value += 1;
-                npatCtx.setMultiply(true);
+            }
+            case FINALLY_STMT -> {
+                stmtCtx.setMultiply(true);
                 updateMeasure(measureList, MeasureEnum.NB_FINALLY);
-                break;
-            case DEFAULT_STMT:
-                value += 1;
-                npatCtx.setMultiply(true);
+            }
+            case DEFAULT_STMT -> {
+                stmtCtx.setMultiply(true);
                 updateMeasure(measureList, MeasureEnum.NB_DEFAULT);
-            default:
-                break;
+            }
+            default -> {
+            }
         }
-        if (npatCtx != null) {
-            npatCtx.setValue(value);
-        }
+
+        stmtCtx.setStmtName(lngStmt.getStmtProp());
+        return stmtCtx;
     }
 
     public static Measure countNbFct(long fctSize) {
@@ -98,16 +95,30 @@ public class MeasureUtils {
         return measureTmp;
     }
 
-    public static double countNpat(NpatCtx npatCtx) {
-        double value = 0;
-        if (npatCtx.getNpatCtxList() != null) {
-            for (NpatCtx nCtx : npatCtx.getNpatCtxList()) {
-                value = countNpat(nCtx);
+    public static double countNpat(StmtCtx stmtCtx, boolean add) {
+        List<Double> results = new ArrayList<>();
+        if (stmtCtx.getStmtCtxList() != null) {
+            for (StmtCtx nCtx : stmtCtx.getStmtCtxList()) {
+                double value;
+                if (nCtx.isAdd()) {
+                    value = countNpat(nCtx, true);
+                } else if (nCtx.isLoopStmt()) {
+                    value = 1 + countNpat(nCtx, false);
+                } else if (nCtx.isMultiply()) {
+                    value = Math.max(1, countNpat(nCtx, false));
+                } else {
+                    value = countNpat(nCtx, add);
+                }
+                if (value > 0) {
+                    results.add(value);
+                }
             }
-            value = value + Math.pow(2, (npatCtx.getNpatCtxList().size()));
+        }
+        if (stmtCtx.isAdd() && stmtCtx.isThenStmt() && !stmtCtx.isElseStmt()) {
+            results.add(1.0);
         }
 
-        return value;
+        return results.isEmpty() ? 0 : (add ? add(results) : multiply(results));
     }
 
     public static Double multiply(List<Double> results) {
@@ -118,26 +129,26 @@ public class MeasureUtils {
         return results.stream().reduce(0.0, Double::sum);
     }
 
-    public static Measure countComplexitCyclomatic(List<Measure> measures) {
+    public static Measure countComplexityCyclomatic(List<Measure> measures) {
         long ifValue = measures.stream()
                 .filter(measure -> measure.getName().equals(MeasureEnum.NB_IF.name()))
-                .mapToLong(o -> o.getValue()).sum();
+                .mapToLong(Measure::getValue).sum();
 
         long forValue = measures.stream()
                 .filter(measure -> measure.getName().equals(MeasureEnum.NB_FOR.name()))
-                .mapToLong(o -> o.getValue()).sum();
+                .mapToLong(Measure::getValue).sum();
         long doValue = measures.stream()
                 .filter(measure -> measure.getName().equals(MeasureEnum.NB_DO.name()))
-                .mapToLong(o -> o.getValue()).sum();
+                .mapToLong(Measure::getValue).sum();
         long whileValue = measures.stream()
                 .filter(measure -> measure.getName().equals(MeasureEnum.NB_WHILE.name()))
-                .mapToLong(o -> o.getValue()).sum();
+                .mapToLong(Measure::getValue).sum();
         long caseValue = measures.stream()
                 .filter(measure -> measure.getName().equals(MeasureEnum.NB_SWITCH.name()))
-                .mapToLong(o -> o.getValue()).sum();
+                .mapToLong(Measure::getValue).sum();
         long catchValue = measures.stream()
                 .filter(measure -> measure.getName().equals(MeasureEnum.NB_CATCH.name()))
-                .mapToLong(o -> o.getValue()).sum();
+                .mapToLong(Measure::getValue).sum();
 
         Measure measureCC = new Measure();
         measureCC.setName(MeasureEnum.COUNT_CC.name());
