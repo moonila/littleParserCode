@@ -12,7 +12,7 @@ public class NodeBean {
 
     private String name;
     private String description;
-    private List<NodeBean> child;
+    private List<NodeBean> children;
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)	
     private List<Measure> measureList;
@@ -44,12 +44,12 @@ public class NodeBean {
         this.description = description;
     }
 
-    public List<NodeBean> getChild() {
-        return child;
+    public List<NodeBean> getChildren() {
+        return children;
     }
 
-    public void setChild(List<NodeBean> child) {
-        this.child = child;
+    public void setChildren(List<NodeBean> children) {
+        this.children = children;
     }
 
     public List<Measure> getMeasureList() {

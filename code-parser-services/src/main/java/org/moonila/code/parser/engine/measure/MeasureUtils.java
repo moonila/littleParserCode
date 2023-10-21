@@ -95,19 +95,19 @@ public class MeasureUtils {
         return measureTmp;
     }
 
-    public static double countNpat(StmtCtx stmtCtx, boolean add) {
+    public static double countNpath(StmtCtx stmtCtx, boolean add) {
         List<Double> results = new ArrayList<>();
         if (stmtCtx.getStmtCtxList() != null) {
             for (StmtCtx nCtx : stmtCtx.getStmtCtxList()) {
                 double value;
                 if (nCtx.isAdd()) {
-                    value = countNpat(nCtx, true);
+                    value = countNpath(nCtx, true);
                 } else if (nCtx.isLoopStmt()) {
-                    value = 1 + countNpat(nCtx, false);
+                    value = 1 + countNpath(nCtx, false);
                 } else if (nCtx.isMultiply()) {
-                    value = Math.max(1, countNpat(nCtx, false));
+                    value = Math.max(1, countNpath(nCtx, false));
                 } else {
-                    value = countNpat(nCtx, add);
+                    value = countNpath(nCtx, add);
                 }
                 if (value > 0) {
                     results.add(value);

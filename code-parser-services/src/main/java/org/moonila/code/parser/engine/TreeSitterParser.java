@@ -11,6 +11,7 @@ import org.moonila.code.parser.engine.beans.Kind;
 import org.moonila.code.parser.engine.beans.KindType;
 import org.moonila.code.parser.engine.beans.NodeBean;
 import org.moonila.code.parser.engine.beans.ResultBean;
+import org.moonila.code.parser.engine.lng.LanguageEnum;
 import org.moonila.code.parser.engine.lng.LngParser;
 import org.moonila.code.parser.engine.lng.LngStmtEnum;
 import org.moonila.code.parser.engine.measure.Measure;
@@ -24,12 +25,10 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 public class TreeSitterParser {
@@ -123,13 +122,11 @@ public class TreeSitterParser {
                     Measure measureCC = MeasureUtils.countComplexityCyclomatic(kindFct.getMeasureList());
                     kindFct.addMeasure(measureCC);
 
-                    String result = new ObjectMapper().writeValueAsString(fct.getStmtCtx());
-                    System.out.println(result);
-                    double npatValue = MeasureUtils.countNpat(fct.getStmtCtx(), false);
+                    double nPathValue = MeasureUtils.countNpath(fct.getStmtCtx(), false);
                     Measure measureNpath = new Measure();
                     measureNpath.setName(MeasureEnum.COUNT_NPATH.name());
                     measureNpath.setDescription(MeasureEnum.COUNT_NPATH.getMeasureDesc());
-                    measureNpath.setValue((long) npatValue);
+                    measureNpath.setValue((long) nPathValue);
                     kindFct.addMeasure(measureNpath);
                 }
 
@@ -144,7 +141,7 @@ public class TreeSitterParser {
     private List<Measure> findAllMeasures(NodeBean nodeBean) {
         Map<String, Measure> allMeasures = nodeBean.getMeasureList().stream()
                 .collect(Collectors.toMap(Measure::getName, measure -> measure));
-        for (NodeBean child : nodeBean.getChild()) {
+        for (NodeBean child : nodeBean.getChildren()) {
             findMeasures(child, allMeasures);
         }
 
@@ -160,8 +157,8 @@ public class TreeSitterParser {
                 mTmp.setValue(measure.getValue() + mTmp.getValue());
             }
         }
-        if (nodeBean.getChild() != null) {
-            for (NodeBean child : nodeBean.getChild()) {
+        if (nodeBean.getChildren() != null) {
+            for (NodeBean child : nodeBean.getChildren()) {
                 findMeasures(child, allMeasures);
             }
         }
@@ -169,11 +166,11 @@ public class TreeSitterParser {
 
     private List<NodeBean> getChild(NodeBean nodeBean) {
         List<NodeBean> functions = new ArrayList<>();
-        if (nodeBean.getChild() != null && !nodeBean.getChild().isEmpty()) {
-            functions = new ArrayList<>(nodeBean.getChild()
+        if (nodeBean.getChildren() != null && !nodeBean.getChildren().isEmpty()) {
+            functions = new ArrayList<>(nodeBean.getChildren()
                     .stream()
                     .filter(nodeTmp -> KindType.FUNCTION.equals(nodeTmp.getType())).toList());
-            for (NodeBean nodeTmp : nodeBean.getChild()) {
+            for (NodeBean nodeTmp : nodeBean.getChildren()) {
                 functions.addAll(getChild(nodeTmp));
             }
         }
@@ -182,8 +179,8 @@ public class TreeSitterParser {
 
     private StmtCtx initStmtCtx(NodeBean nodeBean) {
         StmtCtx stmtCtx = nodeBean.getStmtCtx();
-        if (nodeBean.getChild() != null) {
-            for (NodeBean child : nodeBean.getChild()) {
+        if (nodeBean.getChildren() != null) {
+            for (NodeBean child : nodeBean.getChildren()) {
                 StmtCtx stmtCtxChild = initStmtCtx(child);
                 if (stmtCtxChild != null) {
                     if (nodeBean.getStmtCtx() == null) {
@@ -199,7 +196,7 @@ public class TreeSitterParser {
     }
 
     private NodeBean findParent(NodeBean nodeBean) {
-        NodeBean parent = null;
+        NodeBean parent;
         if (nodeBean.getParent().getStmtCtx() == null) {
             parent = findParent(nodeBean.getParent());
         } else {
@@ -228,20 +225,15 @@ public class TreeSitterParser {
         nodeBean.setParent(parent);
         String type = currNode.getType();
         LngStmtEnum value = lngParser.getLngStmtEnum(currNode);
-        boolean isFct = false;
         if (value != null) {
-            isFct = LngStmtEnum.FCT_STMT == value;
             nodeBean.setName(type);
-            if (isFct) {
-                StmtCtx stmtCtx = new StmtCtx();
-                stmtCtx.setStmtName(LngStmtEnum.FCT_STMT.getStmtProp());
-                nodeBean.setStmtCtx(stmtCtx);
+            StmtCtx stmtCtx = MeasureUtils.countStmtMeasure(value, parent.getMeasureList(), currNode,
+                    lngParser);
+            nodeBean.setStmtCtx(stmtCtx);
+            if (LngStmtEnum.FCT_STMT == value) {
                 nodeBean.setType(KindType.FUNCTION);
             } else {
                 nodeBean.setType(KindType.STATEMENT);
-                StmtCtx stmtCtx = MeasureUtils.countStmtMeasure(value, parent.getMeasureList(), currNode,
-                        lngParser);
-                nodeBean.setStmtCtx(stmtCtx);
             }
             if (!isFirst) {
                 String text = source.substring(currNode.getStartByte(), currNode.getEndByte());
@@ -258,14 +250,36 @@ public class TreeSitterParser {
         nodeBean.setStartLine(currNode.getRange().startRow + 1);
         nodeBean.setEndLine(currNode.getRange().endRow + 1);
         if (currNode.getChildCount() > 0) {
-            List<NodeBean> child = new ArrayList<>();
-            nodeBean.setChild(child);
-            for (int i = 0; i < currNode.getChildCount(); i++) {
-//                if (isFct) {
-                child.add(processChild(currNode.getChild(i), nodeBean, source, false, lngParser));
-//                } else {
-//                    child.add(processChild(currNode.getChild(i), parent, source, false, lngParser));
-//                }
+            List<NodeBean> children = new ArrayList<>();
+            nodeBean.setChildren(children);
+            if ((lngParser.getLngEnum() == LanguageEnum.JAVA || lngParser.getLngEnum() == LanguageEnum.C)
+                    && value == LngStmtEnum.IF_STMT && currNode.getNodeString().contains("alternative:")) {
+                for (int i = 0; i < currNode.getChildCount(); i++) {
+                    Node child = currNode.getChild(i);
+                    if (child.getType().equals("else")) {
+                        List<NodeBean> elseChildren = new ArrayList<>();
+                        NodeBean nodeElse = processChild(currNode.getChild(i), nodeBean, source, false, lngParser);
+                        children.add(nodeElse);
+                        nodeElse.setChildren(elseChildren);
+                        nodeBean.getStmtCtx().addStmtCtx(nodeElse.getStmtCtx());
+                        int idx = 1;
+                        while (!currNode.getChild(i + idx).isNull()
+                                && !currNode.getChild(i + idx).getType().contains("_statement")) {
+                            elseChildren.add(processChild(currNode.getChild(i + idx), nodeElse, source, false, lngParser));
+                            idx++;
+                        }
+                        if (!currNode.getChild(i + idx).isNull()) {
+                            elseChildren.add(processChild(currNode.getChild(i + idx), nodeElse, source, false, lngParser));
+                        }
+                        break;
+                    } else {
+                        children.add(processChild(currNode.getChild(i), nodeBean, source, false, lngParser));
+                    }
+                }
+            } else {
+                for (int i = 0; i < currNode.getChildCount(); i++) {
+                    children.add(processChild(currNode.getChild(i), nodeBean, source, false, lngParser));
+                }
             }
         }
         return nodeBean;
