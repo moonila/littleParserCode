@@ -28,4 +28,8 @@ public class CppParser implements LngParser {
         return StmtUtils.getStmtByName(currNode, allStmtConfs, stmtParent, stmtToSearch);
     }
 
+    @Override
+    public LanguageEnum getLngEnum() {
+        return LanguageEnum.CPP;
+    }
 }

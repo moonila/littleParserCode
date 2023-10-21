@@ -10,4 +10,5 @@ public interface LngParser {
 
     boolean isStmt(Node currNode, LngStmtEnum stmtParent, LngStmtEnum stmtToSearch);
 
+    LanguageEnum getLngEnum();
 }

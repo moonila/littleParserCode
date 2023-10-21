@@ -27,4 +27,9 @@ public class TsParser implements LngParser {
     public boolean isStmt(Node currNode, LngStmtEnum stmtParent, LngStmtEnum stmtToSearch) {
         return StmtUtils.getStmtByName(currNode, allStmtConfs, stmtParent, stmtToSearch);
     }
+
+    @Override
+    public LanguageEnum getLngEnum() {
+        return LanguageEnum.TS;
+    }
 }
