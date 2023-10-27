@@ -6,13 +6,15 @@ import java.util.List;
 
 public class ResultBean {
 
+    private String fileName;
     private StmtCtx nodeBean;
 
     private List<Kind> kindList;
 
-    public ResultBean(List<Kind> kindList, StmtCtx nodeBean) {
+    public ResultBean(String fileName, List<Kind> kindList, StmtCtx nodeBean) {
         this.nodeBean = nodeBean;
         this.kindList = kindList;
+        this.fileName = fileName;
     }
 
     public StmtCtx getNodeBean() {
@@ -29,5 +31,13 @@ public class ResultBean {
 
     public void setKindList(List<Kind> kindList) {
         this.kindList = kindList;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 }

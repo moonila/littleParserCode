@@ -6,4 +6,5 @@ import java.io.File;
 
 public interface ParserServices {
     String parseFile(File src) throws ParserException;
+    String parseDir(String srcDir) throws ParserException;
 }

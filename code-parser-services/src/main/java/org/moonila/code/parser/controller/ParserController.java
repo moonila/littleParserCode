@@ -20,7 +20,7 @@ public class ParserController {
     private ParserServices parserServices;
 
     @PostMapping("/upload")
-    public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> parseFile(@RequestParam("file") MultipartFile file) {
         String message = "";
         try {
             String tmpdir = System.getProperty("java.io.tmpdir");
@@ -30,6 +30,18 @@ public class ParserController {
             return ResponseEntity.status(HttpStatus.OK).body(message);
         } catch (Exception e) {
             message = "Could not upload the file: " + file.getOriginalFilename() + ". Error: " + e.getMessage();
+            return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(message);
+        }
+    }
+
+@PostMapping("/parseDir")
+    public ResponseEntity<?> parseDir(@RequestParam("dir") String dirPath) {
+        String message = "";
+        try {
+            message = parserServices.parseDir(dirPath);
+            return ResponseEntity.status(HttpStatus.OK).body(message);
+        } catch (Exception e) {
+            message = "Could not upload the file: " + dirPath + ". Error: " + e.getMessage();
             return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(message);
         }
     }

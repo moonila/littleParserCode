@@ -20,7 +20,7 @@ public class TreeSitterParserTest {
         try {
             LngParser lngParser = new ParserServicesImpl().getLanguage(LanguageEnum.JAVA);
             String fileName = "src/test/resources/code/ClSample.java";
-            ResultBean resultBean = new TreeSitterParser().generateResultBean(
+            ResultBean resultBean = TreeSitterParser.getInstance().parseFile(
                     new File(currentDirectory, fileName), lngParser);
             assertNotNull(resultBean);
             assertEquals(3, resultBean.getKindList().size());
@@ -169,7 +169,7 @@ public class TreeSitterParserTest {
         try {
             LngParser lngParser = new ParserServicesImpl().getLanguage(LanguageEnum.JAVA);
             String fileName = "src/test/resources/code/Npat.java";
-            ResultBean resultBean = new TreeSitterParser().generateResultBean(
+            ResultBean resultBean = TreeSitterParser.getInstance().parseFile(
                     new File(currentDirectory, fileName), lngParser);
             assertNotNull(resultBean);
             assertEquals(2, resultBean.getKindList().size());
@@ -239,7 +239,7 @@ public class TreeSitterParserTest {
         try {
             String fileName = "src/test/resources/code/ItineraireMetro.c";
             LngParser lngParser = new ParserServicesImpl().getLanguage(LanguageEnum.C);
-            ResultBean resultBean = new TreeSitterParser().generateResultBean(
+            ResultBean resultBean = TreeSitterParser.getInstance().parseFile(
                     new File(currentDirectory, fileName), lngParser);
             assertNotNull(resultBean);
 
