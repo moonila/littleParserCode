@@ -4,8 +4,6 @@ import ai.serenade.treesitter.Node;
 import ai.serenade.treesitter.Parser;
 import ai.serenade.treesitter.Tree;
 import ai.serenade.treesitter.TreeCursor;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.io.FileUtils;
 import org.moonila.code.parser.engine.beans.Kind;
 import org.moonila.code.parser.engine.beans.KindType;
@@ -33,15 +31,15 @@ import java.util.stream.Collectors;
 
 public class TreeSitterParser {
 
-    static {
+    private TreeSitterParser() {
         initNativeLib();
     }
 
-    public TreeSitterParser() {
-
+    public static TreeSitterParser getInstance() {
+        return TreeSitterHolder.instance;
     }
 
-    public static void initNativeLib() {
+    private static void initNativeLib() {
         String libName;
         if (System.getProperty("os.name").toUpperCase().contains("WINDOWS")) {
             libName = "libjava-tree-sitter.dll";
@@ -72,19 +70,7 @@ public class TreeSitterParser {
         }
     }
 
-    public String parseFile(File srcFilePath, LngParser lngParser) throws ParserException {
-        String result;
-        try {
-            result = new ObjectMapper().writeValueAsString(generateResultBean(srcFilePath, lngParser));
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            throw new ParserException(e.getMessage());
-        }
-
-        return result;
-    }
-
-    public ResultBean generateResultBean(File srcFilePath, LngParser lngParser) throws ParserException {
+    public ResultBean parseFile(File srcFilePath, LngParser lngParser) throws ParserException {
         List<Kind> kindList = new ArrayList<>();
         Kind kind = new Kind();
         kind.setName(srcFilePath.getName());
@@ -130,11 +116,12 @@ public class TreeSitterParser {
                     kindFct.addMeasure(measureNpath);
                 }
 
-                return new ResultBean(kindList, nodeBean.getStmtCtx());
+                return new ResultBean(srcFilePath.getAbsolutePath(), kindList, nodeBean.getStmtCtx());
             }
         } catch (IOException | UnsatisfiedLinkError e) {
             e.printStackTrace();
-            throw new ParserException(e.getMessage());
+            throw new ParserException("an error occurred when processing file "
+                    + srcFilePath + " message : " + e.getMessage(), e.getCause());
         }
     }
 
@@ -185,7 +172,9 @@ public class TreeSitterParser {
                 if (stmtCtxChild != null) {
                     if (nodeBean.getStmtCtx() == null) {
                         NodeBean parent = findParent(nodeBean);
-                        parent.getStmtCtx().addStmtCtx(stmtCtxChild);
+                        if (parent != null) {
+                            parent.getStmtCtx().addStmtCtx(stmtCtxChild);
+                        }
                     } else {
                         nodeBean.getStmtCtx().addStmtCtx(stmtCtxChild);
                     }
@@ -197,7 +186,7 @@ public class TreeSitterParser {
 
     private NodeBean findParent(NodeBean nodeBean) {
         NodeBean parent;
-        if (nodeBean.getParent().getStmtCtx() == null) {
+        if (nodeBean.getParent() != null && nodeBean.getParent().getStmtCtx() == null) {
             parent = findParent(nodeBean.getParent());
         } else {
             parent = nodeBean.getParent();
@@ -258,10 +247,9 @@ public class TreeSitterParser {
                     Node child = currNode.getChild(i);
                     if (child.getType().equals("else")) {
                         List<NodeBean> elseChildren = new ArrayList<>();
-                        NodeBean nodeElse = processChild(currNode.getChild(i), nodeBean, source, false, lngParser);
+                        NodeBean nodeElse = processChild(child, nodeBean, source, false, lngParser);
                         children.add(nodeElse);
                         nodeElse.setChildren(elseChildren);
-                        nodeBean.getStmtCtx().addStmtCtx(nodeElse.getStmtCtx());
                         int idx = 1;
                         while (!currNode.getChild(i + idx).isNull()
                                 && !currNode.getChild(i + idx).getType().contains("_statement")) {
@@ -273,7 +261,7 @@ public class TreeSitterParser {
                         }
                         break;
                     } else {
-                        children.add(processChild(currNode.getChild(i), nodeBean, source, false, lngParser));
+                        children.add(processChild(child, nodeBean, source, false, lngParser));
                     }
                 }
             } else {
@@ -283,6 +271,16 @@ public class TreeSitterParser {
             }
         }
         return nodeBean;
+    }
+
+
+    private static class TreeSitterHolder {
+
+        private static final TreeSitterParser instance = new TreeSitterParser();
+
+        private TreeSitterHolder() {
+            super();
+        }
     }
 
 }
