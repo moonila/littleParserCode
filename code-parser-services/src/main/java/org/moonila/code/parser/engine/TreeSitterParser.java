@@ -247,10 +247,9 @@ public class TreeSitterParser {
                     Node child = currNode.getChild(i);
                     if (child.getType().equals("else")) {
                         List<NodeBean> elseChildren = new ArrayList<>();
-                        NodeBean nodeElse = processChild(currNode.getChild(i), nodeBean, source, false, lngParser);
+                        NodeBean nodeElse = processChild(child, nodeBean, source, false, lngParser);
                         children.add(nodeElse);
                         nodeElse.setChildren(elseChildren);
-                        nodeBean.getStmtCtx().addStmtCtx(nodeElse.getStmtCtx());
                         int idx = 1;
                         while (!currNode.getChild(i + idx).isNull()
                                 && !currNode.getChild(i + idx).getType().contains("_statement")) {
@@ -262,7 +261,7 @@ public class TreeSitterParser {
                         }
                         break;
                     } else {
-                        children.add(processChild(currNode.getChild(i), nodeBean, source, false, lngParser));
+                        children.add(processChild(child, nodeBean, source, false, lngParser));
                     }
                 }
             } else {

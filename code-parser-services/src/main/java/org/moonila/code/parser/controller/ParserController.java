@@ -34,14 +34,14 @@ public class ParserController {
         }
     }
 
-@PostMapping("/parseDir")
-    public ResponseEntity<?> parseDir(@RequestParam("dir") String dirPath) {
-        String message = "";
+    @PostMapping("/parseDir")
+    public ResponseEntity<?> parseDir(@RequestParam("dir") String dirPath,
+                                      @RequestParam("result") String resultPath) {
         try {
-            message = parserServices.parseDir(dirPath);
-            return ResponseEntity.status(HttpStatus.OK).body(message);
+            parserServices.parseDir(dirPath, resultPath);
+            return ResponseEntity.status(HttpStatus.OK).body("All is ok and result available in "+resultPath);
         } catch (Exception e) {
-            message = "Could not upload the file: " + dirPath + ". Error: " + e.getMessage();
+           String message = "Could not upload the file: " + dirPath + ". Error: " + e.getMessage();
             return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(message);
         }
     }

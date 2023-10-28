@@ -1,6 +1,7 @@
 package org.moonila.code.parser.engine;
 
 import org.junit.jupiter.api.Test;
+import org.moonila.code.parser.Utilities;
 import org.moonila.code.parser.engine.beans.Kind;
 import org.moonila.code.parser.engine.beans.ResultBean;
 import org.moonila.code.parser.engine.lng.LanguageEnum;
@@ -18,7 +19,7 @@ public class TreeSitterParserTest {
     void treeSitterParserJava() {
         String currentDirectory = new File("").getAbsolutePath();
         try {
-            LngParser lngParser = new ParserServicesImpl().getLanguage(LanguageEnum.JAVA);
+            LngParser lngParser = Utilities.getLanguage(LanguageEnum.JAVA);
             String fileName = "src/test/resources/code/ClSample.java";
             ResultBean resultBean = TreeSitterParser.getInstance().parseFile(
                     new File(currentDirectory, fileName), lngParser);
@@ -167,7 +168,7 @@ public class TreeSitterParserTest {
     void treeSitterParserJavaNpat() {
         String currentDirectory = new File("").getAbsolutePath();
         try {
-            LngParser lngParser = new ParserServicesImpl().getLanguage(LanguageEnum.JAVA);
+            LngParser lngParser = Utilities.getLanguage(LanguageEnum.JAVA);
             String fileName = "src/test/resources/code/Npat.java";
             ResultBean resultBean = TreeSitterParser.getInstance().parseFile(
                     new File(currentDirectory, fileName), lngParser);
@@ -238,7 +239,7 @@ public class TreeSitterParserTest {
         String currentDirectory = new File("").getAbsolutePath();
         try {
             String fileName = "src/test/resources/code/ItineraireMetro.c";
-            LngParser lngParser = new ParserServicesImpl().getLanguage(LanguageEnum.C);
+            LngParser lngParser = Utilities.getLanguage(LanguageEnum.C);
             ResultBean resultBean = TreeSitterParser.getInstance().parseFile(
                     new File(currentDirectory, fileName), lngParser);
             assertNotNull(resultBean);

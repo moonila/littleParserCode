@@ -25,7 +25,7 @@ public enum LanguageEnum {
     public boolean containsExt(String extension) {
         boolean result = false;
         if (this.extensions != null) {
-            result = Arrays.stream(extensions).allMatch(it -> it.contains(extension));
+            result = Arrays.asList(extensions).contains(extension);
         }
         return result;
     }
