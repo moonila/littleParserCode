@@ -24,6 +24,7 @@ public class FileProcessor {
         pool.shutdown();
         try {
             if (!pool.awaitTermination(120, TimeUnit.SECONDS)) {
+                System.out.println("Timeout exceeded, all files may not be parsed");
                 pool.shutdownNow();
             }
         } catch (InterruptedException e) {
