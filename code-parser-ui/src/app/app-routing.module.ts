@@ -4,27 +4,18 @@ import {HomeComponent} from "./home/home.component";
 import {DetailComponent} from "./detail/detail.component";
 
 export const appRouteList: Routes = [
-    {
-        path: 'home',
-        component: HomeComponent
-    },
-    {
-       path: 'detail',
-       component: DetailComponent
-    },
-    {
-        path: '',
-        redirectTo: 'home'
-    }
+    { path: '', component: HomeComponent },
+    { path: 'home', component: HomeComponent },
+    { path: 'detail', component: DetailComponent }
 ];
 
 @NgModule({
    exports: [
         RouterModule
       ],
-      imports: [
-        RouterModule.forRoot(appRouteList)
-      ]
+    imports: [
+        RouterModule.forRoot(appRouteList, {scrollPositionRestoration: 'enabled'})
+    ]
 
 })
 export class AppRoutingModule {

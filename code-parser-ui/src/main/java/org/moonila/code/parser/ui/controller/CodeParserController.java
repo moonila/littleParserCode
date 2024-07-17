@@ -1,5 +1,6 @@
 package org.moonila.code.parser.ui.controller;
 
+import org.moonila.code.parser.ui.CodeParserException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
@@ -19,56 +20,53 @@ import java.util.UUID;
 @RequestMapping(path = "${apiPrefix}")
 public class CodeParserController {
 
-  @Value("${parserServiceUrl}")
-  private String parserServiceUrl;
+    @Value("${parserServiceUrl}")
+    private String parserServiceUrl;
 
-  @GetMapping("/resource")
-  @ResponseBody
-  public Map<String, Object> home() {
-    Map<String, Object> model = new HashMap<>();
-    model.put("id", UUID.randomUUID().toString());
-    model.put("content", "Load a source file");
-    return model;
-  }
-
-  @PostMapping("/file-upload")
-  @ResponseBody
-  public String uploadFile(@RequestParam("file") MultipartFile file) {
-    String urlUpload = parserServiceUrl + "/upload";
-    String result = null;
-    try {
-      //Define multipart header
-      HttpHeaders headers = new HttpHeaders();
-      headers.setContentType(MediaType.MULTIPART_FORM_DATA);
-
-      //Transform the multipart file as resource
-      ByteArrayResource contentsAsResource = new ByteArrayResource(file.getBytes()) {
-        @Override
-        public String getFilename() {
-          return file.getOriginalFilename(); // Filename has to be returned in order to be able to post.
-        }
-      };
-
-      //Define the body
-      MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-      body.add("file", contentsAsResource);
-
-      //Define the entity to be post
-      HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-
-      //Post the request using RestTemplate
-      RestTemplate restTemplate = new RestTemplate();
-      ResponseEntity<String> resultTmp = restTemplate.postForEntity(urlUpload, requestEntity, String.class);
-      result = resultTmp.getBody();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    @GetMapping("/resource")
+    @ResponseBody
+    public Map<String, Object> home() {
+        Map<String, Object> model = new HashMap<>();
+        model.put("id", UUID.randomUUID().toString());
+        model.put("content", "Load a source file");
+        return model;
     }
 
-    return result;
-  }
+    @PostMapping("/file-upload")
+    @ResponseBody
+    public String uploadFile(@RequestParam("file") MultipartFile file) throws CodeParserException {
+        String urlUpload = parserServiceUrl + "/upload";
+        try {
+            //Define multipart header
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
-  @GetMapping(value = "/{path:[^\\.]*}")
-  public String redirect() {
-    return "forward:/";
-  }
+            //Transform the multipart file as resource
+            ByteArrayResource contentsAsResource = new ByteArrayResource(file.getBytes()) {
+                @Override
+                public String getFilename() {
+                    return file.getOriginalFilename(); // Filename has to be returned in order to be able to post.
+                }
+            };
+
+            //Define the body
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("file", contentsAsResource);
+
+            //Define the entity to be post
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+            //Post the request using RestTemplate
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<String> resultTmp = restTemplate.postForEntity(urlUpload, requestEntity, String.class);
+            return resultTmp.getBody();
+        } catch (Exception e) {
+            throw new CodeParserException(e.getMessage());
+        }
+    }
+
+    @GetMapping(value = "/{path:[^\\.]*}")
+    public String redirect() {
+        return "forward:/";
+    }
 }

@@ -22,7 +22,7 @@ In other command prompt
 * mvn clean spring-boot:run
 
 ## URLs
-The ui: http://localhost:8888/parser-ui  
+The ui: http://localhost:8090/parser-ui  
 The post Rest service: http://localhost:8080/parser/api/upload
 
 

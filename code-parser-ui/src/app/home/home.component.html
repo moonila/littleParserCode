@@ -1,7 +1,10 @@
 <div>
-    <form (submit)="onFormSubmit()">
+    <div *ngIf="errorMessage">
+        <span class="error">{{ errorMessage }}</span>
+    </div>
+    <form [formGroup]="productForm">
       <input type="file" class="file-upload" (change)="onFileSelected($event)"/>
         <br/>
-      <button>Submit</button>
+      <button (click)="onFormSubmit()">Submit</button>
     </form>
 </div>
