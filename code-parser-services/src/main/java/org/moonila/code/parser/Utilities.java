@@ -2,10 +2,11 @@ package org.moonila.code.parser;
 
 import org.apache.commons.io.FilenameUtils;
 import org.moonila.code.parser.engine.lng.*;
+import org.moonila.code.parser.engine.ParserException;
 
 public class Utilities {
 
-    public static LngParser getLanguage(LanguageEnum language) {
+    public static LngParser getLanguage(LanguageEnum language) throws ParserException {
         LngParser lngVal = null;
         switch (language) {
             case JAVA -> lngVal = new JavaParser();
@@ -14,6 +15,7 @@ public class Utilities {
             case C -> lngVal = new Cparser();
             case CPP -> lngVal = new CppParser();
             case PY -> lngVal = new PyParser();
+            case UNKNOWN -> throw new ParserException("The file language is unknown");
             default -> {
             }
         }
